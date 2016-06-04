@@ -15,11 +15,10 @@ from itertools import islice, chain
 import sys
 import os
 
-import databasehelper
 import datasourceAlliance
 import datasourcePlayers
 import datasourceHabitats
-import aws_s3
+#import aws_s3
 import utilities
 
 from time import gmtime, strftime
@@ -52,10 +51,10 @@ URL_FORMAT = "http://public-data.lordsandknights.com/LKWorldServer-"
 
 # set remote and local file location
 filename = 'lnk_data.zip'
-folderpath = os.getcwd() + "\\"
+folderpath = os.getcwd() + "/"
 
 bucket_name='app.monty.lnk'
-local_file_path = "C:\\cygwin64\\home\\nellie\\lnk\\" + JSON_FILE
+local_file_path = "/Users/asitm/Documents/Workspace/Projects/LakStrat/python scripts/" + JSON_FILE
 
 #download the url file after checking connection for mysql writing
 ''' OLD CODE REPLACING WITH THE DOWNLOAD FUNCTION BELOW
@@ -75,7 +74,7 @@ def download(world, lastUpdateDate, lastUpdated, fileType, updateType):
 
     ulog.logit(3, "url - " + url)
     webdata = read_URL(url)
-    savedFileName = folderpath + lastUpdateDate + "\\" + saveAsFileName + ".json"
+    savedFileName = folderpath + lastUpdateDate + "/" + saveAsFileName + ".json"
     zipFileName = savedFileName + ".gz"
     make_sure_path_exists(folderpath + lastUpdateDate)
 
@@ -142,11 +141,11 @@ def getFileFromUrl(fileType, world, lastUpdateDate, lastUpdated, updateType):
 
 def save2s3(fileType, updateType, file_key_prefix, savedFileName):
     success = 0
-    ulog.logit(2, "Entering Function save2s3")
-    file_key = file_key_prefix + '_' + fileType + '_' + updateType + ".json.gz"
-    ulog.logit(2, "Saving file '" + file_key + "' to s3 bucket '" + bucket_name + "'")
-    success = aws_s3.connectAndSave2s3(bucket_name, file_key, savedFileName)
-    return success
+    # ulog.logit(2, "Entering Function save2s3")
+    # file_key = file_key_prefix + '_' + fileType + '_' + updateType + ".json.gz"
+    # ulog.logit(2, "Saving file '" + file_key + "' to s3 bucket '" + bucket_name + "'")
+    # success = aws_s3.connectAndSave2s3(bucket_name, file_key, savedFileName)
+    # return success
       
     
 def process(fileType, world, lastUpdated, lastUpdateDate, updateType):
@@ -196,7 +195,7 @@ def main():
         ulog.logit(2, "Entering Main function.")
 
         #Process the three files for US-3 and US-11
-        for world in ['US-3', 'US-11']:
+        for world in ['US-11', 'US-3']:
             ulog.logit(3, "Processing world " + world)
             world = world.rstrip('\r\n')
             
@@ -222,24 +221,24 @@ def main():
 
 
             
-        with open(folderpath + 'worlds.txt', "rb") as worlds:
-            for world in worlds:
-                ulog.logit(3, "Processing world " + world)
-                world = world.rstrip('\r\n')
+        # with open(folderpath + 'worlds.txt', "rb") as worlds:
+        #     for world in worlds:
+        #         ulog.logit(3, "Processing world " + world)
+        #         world = world.rstrip('\r\n')
                 
-                url_lastupdated = "http://public-data.lordsandknights.com/LKWorldServer-" + world + "/lastUpdate"
-                #lastUpdated = read_URL(url_lastupdated)
-                utctime = datetime.utcnow()
-                lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
-                lastUpdateDate = utctime.strftime("%Y-%m-%d")
-                ulog.logit(3, "update timestamp for this run " + lastUpdated)
+        #         url_lastupdated = "http://public-data.lordsandknights.com/LKWorldServer-" + world + "/lastUpdate"
+        #         #lastUpdated = read_URL(url_lastupdated)
+        #         utctime = datetime.utcnow()
+        #         lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
+        #         lastUpdateDate = utctime.strftime("%Y-%m-%d")
+        #         ulog.logit(3, "update timestamp for this run " + lastUpdated)
 
-                updateType = "full"
+        #         updateType = "full"
 
-                ulog.logit(3, "update type '" + updateType + "'")
-                ulog.logit(3, "Beginning Data Pull...")
+        #         ulog.logit(3, "update type '" + updateType + "'")
+        #         ulog.logit(3, "Beginning Data Pull...")
 
-                process("players", world, lastUpdated, lastUpdateDate, updateType)
+        #         process("players", world, lastUpdated, lastUpdateDate, updateType)
 
 if __name__ == "__main__":
   main()

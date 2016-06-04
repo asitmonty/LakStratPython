@@ -1,5 +1,5 @@
   #database class
-import databasehelper_mysql
+import databasehelper_mysql as dbhelper
 import pandas
 
 COLUMN_LASTUPDATED = "lastUpdated"
@@ -11,7 +11,7 @@ COLUMN_MAPY = "mapY"
 COLUMN_POINTS = "points"
 COLUMN_PLAYERID = "playerID"
 COLUMN_PUBLICTYPE = "publicType"
-COLUMN_ALLIANCEID = "allianceId"
+COLUMN_ALLIANCEID = "allianceID"
 COLUMN_ALLIANCERANK = "allianceRank"
 COLUMN_ALLIANCENAME = "allianceName"
 COLUMN_NICK = "nick"
@@ -23,8 +23,8 @@ COLUMNS_HABITATS = [COLUMN_LASTUPDATED, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, CO
 class TblHabitat:
 
     def __init__(self):
-      self._db = databasehelper_mysql.DbHelper()
-      self._tblname = self._db._TBL_HABITAT
+      self._db = dbhelper.DbHelper()
+      self._tblname = dbhelper.TBL_HABITAT_RAW
 
     def sql_do(self, sql, *params):
       self._db.execute(sql, params)
@@ -59,7 +59,6 @@ class TblHabitat:
             + "')" 
             #+ " GROUP BY " + group_column_names_string
             )
-
       df_player_castle_data = pandas.read_sql(sql, self._db.get_connection())
       #df = self.convert_to_unicode_dtype(df)
       return df_player_castle_data
@@ -72,7 +71,6 @@ class TblHabitat:
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
       group_column_names_string = ",".join(str(x) for x in group_column_names)  # for columns to be grouped by, join as string for use in sql query
-      
       # create the sql query string 
       if include == 1:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
@@ -86,7 +84,6 @@ class TblHabitat:
             + "')" 
             #+ " GROUP BY " + group_column_names_string
             )
-
       df_player_castle_data = pandas.read_sql(sql, self._db.get_connection())
       #df = self.convert_to_unicode_dtype(df)
       return df_player_castle_data
@@ -94,7 +91,7 @@ class TblHabitat:
       
     def insert(self, row):
       format_strings = "(" + ','.join(COLUMNS_HABITATS) + ") values (" + ','.join(['%s'] * len(COLUMNS_HABITATS)) + ")"
-      result = self._db.execute("insert into tbl_Habitat %s" % format_strings,
+      result = self._db.execute("insert into " + self._tblname + " %s" % format_strings,
                 row)
 
     
@@ -130,10 +127,10 @@ class TblHabitat:
       self._db.row_factory = sqlite3.Row
 
     @property
-    def table(self): return self._table
+    def table(self): return self._tblname
 
     @table.setter
-    def table(self, t): self._table = t
+    def settable(self, t): self._tblname = t
 
 
     def main():

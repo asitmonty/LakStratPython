@@ -1,12 +1,14 @@
   #database class
-import databasehelper
+import databasehelper_mysql as dbhelper
 
 COLUMNS_PLAYERS = ['lastUpdated', 'world', 'id', 'nick', 'habitatIDs', 'allianceID', 'alliancePermission', 'points', 'rank', 'underAttackProtection', 'onVacation']
     
 class TblPlayer:
 
+    global _tblname
     def __init__(self):
-      self._db = databasehelper.DbHelper()
+      self._db = dbhelper.DbHelper()
+      self._tblname = dbhelper.TBL_PLAYER_RAW
 
     def sql_do(self, sql, *params):
       self._db.execute(sql, params)
@@ -14,7 +16,7 @@ class TblPlayer:
 
     def insert(self, row):
       format_strings = "(" + ','.join(COLUMNS_PLAYERS) + ") values (" + ','.join(['%s'] * len(COLUMNS_PLAYERS)) + ")"
-      result = self._db.execute("insert into tbl_Player %s" % format_strings,
+      result = self._db.execute("insert into  " + self._tblname + " %s" % format_strings,
                 row)
 
     def writeToTable(self, player_data):
@@ -44,10 +46,10 @@ class TblPlayer:
       self._db.row_factory = sqlite3.Row
 
     @property
-    def table(self): return self._table
+    def table(self): return self._tblname
 
     @table.setter
-    def table(self, t): self._table = t
+    def settable(self, t): self._tblname = t
 
 
     def main():

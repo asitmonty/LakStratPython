@@ -1,5 +1,5 @@
   #database class
-import databasehelper_mysql
+import databasehelper_mysql as dbhelper
 import pandas
 
 COLUMN_LASTUPDATED = "lastUpdated"
@@ -23,8 +23,8 @@ COLUMNS_ACTIVITY_TRACKER = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_PLAYERID, C
 class TblActivityTracker:
 
     def __init__(self):
-      self._db = databasehelper_mysql.DbHelper()
-      self._tblname = self._db._TBL_ACTIVITY_TRACKER
+      self._db = dbhelper.DbHelper()
+      self._tblname = dbhelper.TBL_ACTIVITY_TRACKER
       
     def sql_do(self, sql, *params):
       self._db.execute(sql, params)
@@ -80,7 +80,7 @@ class TblActivityTracker:
 
     def insert(self, row):
       format_strings = "(" + ','.join(COLUMNS_HABITATS) + ") values (" + ','.join(['%s'] * len(COLUMNS_HABITATS)) + ")"
-      result = self._db.execute("insert into tbl_Habitat %s" % format_strings,
+      result = self._db.execute("insert into " + self._tblname + " %s" % format_strings,
                 row)
     
     
@@ -118,7 +118,7 @@ class TblActivityTracker:
     def table(self): return self._table
 
     @table.setter
-    def table(self, t): self._table = t
+    def settable(self, t): self._table = t
 
 
     def main():
