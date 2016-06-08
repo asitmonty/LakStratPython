@@ -1,0 +1,35 @@
+INFO: Starting update from LnK data dump: 
+INFO: Processing world US-11
+INFO: update timestamp for this run 2016-06-08 14-49-49
+INFO: update type 'full'
+INFO: Beginning Data Pull...
+INFO: url - http://public-data.lordsandknights.com/LKWorldServer-US-11/alliances.json.gz
+INFO: total lines in data file 14224
+
+
+INFO: url - http://public-data.lordsandknights.com/LKWorldServer-US-11/players.json.gz
+INFO: total lines in data file 153121
+
+
+INFO: url - http://public-data.lordsandknights.com/LKWorldServer-US-11/habitats.json.gz
+INFO: total lines in data file 225268
+
+
+INFO: Completed world: US-11
+INFO: Processing world US-3
+INFO: update timestamp for this run 2016-06-08 14-50-00
+INFO: update type 'full'
+INFO: Beginning Data Pull...
+INFO: url - http://public-data.lordsandknights.com/LKWorldServer-US-3/alliances.json.gz
+INFO: total lines in data file 116405
+
+
+INFO: url - http://public-data.lordsandknights.com/LKWorldServer-US-3/players.json.gz
+INFO: total lines in data file 1031044
+
+
+INFO: url - http://public-data.lordsandknights.com/LKWorldServer-US-3/habitats.json.gz
+INFO: total lines in data file 2291510
+
+
+INFO: Completed world: US-3

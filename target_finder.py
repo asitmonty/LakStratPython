@@ -83,7 +83,6 @@ def create_habitat_pairs(pdata_unsorted, field_radius):
     pdata = sortdata(pdata_unsorted, sort_colname_coordinates)  # sort input file contents by X and Y coordinates    
     for index_i, row_i in pdata.iterrows():
         loop_counter += 1
-        utilities.show_progress(loop_counter, rowcount)  #show progress on screen
         irowcount+=1
         pointer = irowcount
         x1 = int(row_i['mapX'])

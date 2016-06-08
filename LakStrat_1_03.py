@@ -4,7 +4,8 @@
 import sqlite3
 import pandas
 import numpy as np
-import datetime
+from datetime import datetime
+import os
 
 #import plotly.tools as tls
 #import plotly.plotly as py
@@ -12,6 +13,8 @@ import datetime
 import json
 import time
 import sys
+import numpy
+
 
 import databasehelper_mysql as dbhelper
 import datasourceActivityTracker
@@ -24,8 +27,16 @@ global loglevel
 global ulog
 global tbl
 global tbl_habitat
+global folderpath
+global lastUpdated
+global lastUpdateDate
+
+
 
 date_split_character = ' '
+folderpath = ''
+lastUpdated = ''
+lastUpdateDate = ''
 
 COLUMN_LASTUPDATED = "lastUpdated"
 COLUMN_WORLD = "world"
@@ -57,6 +68,17 @@ else:
   logLevel = 3
 
 ulog = utilities.utilities(logLevel)
+
+
+def make_sure_path_exists(path):
+    import os
+    import errno
+
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
 
 
 def add_formatted_date_column(df):
@@ -92,9 +114,9 @@ def get_pivoted_dates_table(df):
     snapshot_dates = []
     column_names = list(df_pivot.columns.values)
     for date in column_names:
-        date = datetime.datetime.strptime(date, "%Y-%m-%d")  
+        date = datetime.strptime(date, "%Y-%m-%d")  
         #date = date.map(pandas.Timestamp.date)
-        snapshot_dates.append(datetime.datetime.strftime(date, "%Y-%b-%d"))
+        snapshot_dates.append(datetime.strftime(date, "%Y-%b-%d"))
     df_pivot.columns = snapshot_dates  #important to rename dates after pivot, since Apr will come before March otherwise
      # date conversion is useful when printing dataframe directly to output.
             # for writing to sql table, you can ignore that and keep it usual yyyy-mm-dd
@@ -270,8 +292,13 @@ def generatePlayerGrowthTracker(allianceIDs):
                 1. json formatted data in 'index' formatting
 '''
 def generateFortClusters(playerIDs, allianceIDs, max_fort_radius):
+
+    global folderpath
+    global lastUpdateDate
+    global lastUpdated
+
     habitat_column_names = [COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_PLAYERID]
-    output_json_combinations = "fort_clusters.json"
+    
     df_player_habitat_data = pandas.DataFrame()
     # read player habitat data from sql
     if playerIDs.values():
@@ -281,32 +308,46 @@ def generateFortClusters(playerIDs, allianceIDs, max_fort_radius):
         df_player_habitat_data = tbl_habitat.read_from_sql_to_dataframe_alliance(0, allianceIDs.values())  # load selected rows fromt the habitat table to a dataframe
         playerIDList = df_player_habitat_data.playerID.unique()
    # df_player_habitat_data.to_csv('player_habitat_comma.csv', encoding='utf-8')
-    alliance_distance_list = []
+    loop_counter = 0
+    rowcount = playerIDList.size
     for playerID in playerIDList:
+        utilities.show_progress(loop_counter, rowcount)  #show progress on screen
         df_player_castles = df_player_habitat_data[df_player_habitat_data[COLUMN_PLAYERID] == playerID]  #filter to current player
-        df_player_castles = df_player_castles[df_player_habitat_data[COLUMN_PUBLICTYPE] == 0]  #filter to castles only
+        
+        #df_player_castles.to_csv('habitat_dump.csv', encoding='utf-8')    
+        output_file_prefix = "US3_habitat_"
+        json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
+        jdata = df_player_castles.to_json(orient='index') # write dataframe to json
+        writefile(jdata, json_habitat_data_output)  # write the habitat pairs into json file for future use
+        
+        output_file_prefix = "US3_cluster_"
+        json_fort_clusters_output_file = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
+        df_player_castles = df_player_castles[df_player_castles[COLUMN_PUBLICTYPE] == 0]  #filter to castles only
         df_player_castles = df_player_castles[habitat_column_names]  #pick only relevant columns
         distance_list = clusterizer.create_habitat_pairs(df_player_castles, max_fort_radius)
-        alliance_distance_list += distance_list
-    jdata = pandas.DataFrame(alliance_distance_list).to_json(orient='index') # write dataframe to json 
-    return jdata
+        jdata = pandas.DataFrame(distance_list).to_json(orient='index') # write dataframe to json 
+        writefile(jdata, json_fort_clusters_output_file)  # write the habitat pairs into json file for future use
+        loop_counter += 1
 
-    
+
 def writefile(jdata, filename):
     ulog.logit(2, "writefile... ")
     with open(filename, 'w+') as f:
         f.write(jdata)
     
-    
+    #replaced with habitat dump per player. can delete later in july 2016 if still not used by then
 def create_habitat_dump(allianceIDs):
     df_all_habitats = tbl_habitat.read_from_sql_to_dataframe_alliance(0, allianceIDs.values())
     df_all_habitats.to_csv('habitat_dump.csv', encoding='utf-8')
     jdata = df_all_habitats.to_json(orient='index') # write dataframe to json
-    return jdata
+    writefile(jdata, json_habitat_data_output)  # write the habitat pairs into json file for future use
     
 #main flow
 def main():
 
+    global folderpath
+    global lastUpdateDate
+    global lastUpdated
     ulog.logit(2, "Entering Main function.")
     
     alliance_legends = {"legends":26562}
@@ -314,8 +355,14 @@ def main():
                         'RoE':395,'RoS':2920,'SS':198}  #'Legends':26562,
     alliance_all = {'none':0}
     playerIDs = {'Blade': 1373}
+    utctime = datetime.utcnow()
+    lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
+    lastUpdateDate = utctime.strftime("%Y-%m-%d")
+    folderpath = os.getcwd() + "/" 
+    make_sure_path_exists(folderpath + lastUpdateDate)
     tbl_habitat._tblname = dbhelper.TBL_HABITAT_US3
     
+
     max_fort_radius = 8
     #defining variables for alliances name/Ids to selectively filter data from database
     json_growth_tracker_output_file = 'activity_tracker.json'
@@ -336,16 +383,14 @@ def main():
     #sending combinations by habitat id separately, and then separately updating castle data, no info is repeated and provides good 
     #flexibility to the android app for local manipulations like increased/decreased fort radius, combining with other player castles
     # that are short of the required number to make forts.
-    ulog.logit(3, "Running clusterizer: ")
-    jdata = generateFortClusters(playerIDs, allianceIDs, max_fort_radius)  #one of playerIDs and allianceIDs have the value, other is null
-    writefile(jdata, json_fort_clusters_output_file)  # write the habitat pairs into json file for future use
+    ulog.logit(3, "Running clusterizer and habitat dump: ")
+    generateFortClusters(playerIDs, allianceIDs, max_fort_radius)  #one of playerIDs and allianceIDs have the value, other is null
     ulog.logit(3, "Finishing habitat clustering process.")
     
     #create castle dump for the alliance and player selected
-    ulog.logit(3, "Running habitat dump: ")
-    jdata = create_habitat_dump(allianceIDs)  #one of playerIDs and allianceIDs have the value, other is null
-    writefile(jdata, json_habitat_data_output)  # write the habitat pairs into json file for future use
-    ulog.logit(3, "Finishing habitat dump.")
+    #ulog.logit(3, "Running habitat dump: ")
+    #create_habitat_dump(allianceIDs)  #one of playerIDs and allianceIDs have the value, other is null
+    #ulog.logit(3, "Finishing habitat dump.")
 
 
 if __name__ == "__main__":
