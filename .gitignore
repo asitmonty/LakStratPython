@@ -91,4 +91,7 @@ ENV/
 #custom files
 #files with password and other info
 databasehelper_mysql.py
-2016*
+2016*/*
+2016*/
+log/
+_oldfiles/
