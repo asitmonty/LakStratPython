@@ -95,3 +95,4 @@ databasehelper_mysql.py
 2016*/
 log/
 _oldfiles/
+*.json
