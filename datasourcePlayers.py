@@ -1,7 +1,7 @@
   #database class
 import databasehelper_mysql as dbhelper
 
-COLUMNS_PLAYERS = ['lastUpdated', 'world', 'id', 'nick', 'habitatIDs', 'allianceID', 'alliancePermission', 'points', 'rank', 'underAttackProtection', 'onVacation']
+COLUMNS_PLAYERS = ['lastSnapshot', 'lastUpdateLnk', 'world', 'id', 'nick', 'habitatIDs', 'allianceID', 'alliancePermission', 'points', 'rank', 'underAttackProtection', 'onVacation']
     
 class TblPlayer:
 

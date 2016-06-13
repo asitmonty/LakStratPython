@@ -1,7 +1,8 @@
   #database class
 import databasehelper_mysql as dbhelper
 
-COLUMNS_ALLIANCE = ['lastUpdated', 'world', 'id', 'name', 'description', 'playerIDs', 'rankAverage', 'rank', 'pointsAverage', 'points']
+COLUMNS_ALLIANCE = ['lastSnapshot', 'lastUpdateLnk', 'world', 'id', 'name', 'description', 'playerIDs', 
+                    'rankAverage', 'rank', 'pointsAverage', 'points']
 
 
 

@@ -15,6 +15,7 @@ def my_custom_sql():
     #cursor = connections[RDS_DB_NAME].cursor()
     cursor = connection.cursor()
     cursor.execute("SELECT COUNT(*) from tbl_habitat")
+    print "executed cursor in my_custom_sql"
     row = cursor.fetchall()
     return str(row)
 

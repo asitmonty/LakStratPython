@@ -2,7 +2,8 @@
 import databasehelper_mysql as dbhelper
 import pandas
 
-COLUMN_LASTUPDATED = "lastUpdated"
+COLUMN_SNAPSHOT = 'lastSnapshot'
+COLUMN_LASTUPDATE_LNK = "lastUpdateLnk"
 COLUMN_WORLD = "world"
 COLUMN_ID = "id"
 COLUMN_NAME = "name"
@@ -10,6 +11,7 @@ COLUMN_MAPX = "mapX"
 COLUMN_MAPY = "mapY"
 COLUMN_POINTS = "points"
 COLUMN_PLAYERID = "playerID"
+COLUMN_CREATION_DATE= "creationDate"
 COLUMN_PUBLICTYPE = "publicType"
 COLUMN_ALLIANCEID = "allianceID"
 COLUMN_ALLIANCERANK = "allianceRank"
@@ -17,7 +19,8 @@ COLUMN_ALLIANCENAME = "allianceName"
 COLUMN_NICK = "nick"
 COLUMN_PLAYERPOINTS = "playerPoints"
 
-COLUMNS_HABITATS = [COLUMN_LASTUPDATED, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
+COLUMNS_HABITATS = [COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, 
+                    COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_CREATION_DATE, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
                             
    
 class TblHabitat:
@@ -39,8 +42,8 @@ class TblHabitat:
     '''
     def read_from_sql_to_dataframe(self, include, list_players):
       
-      select_column_names = [COLUMN_LASTUPDATED, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
-      group_column_names = [COLUMN_PLAYERID, COLUMN_LASTUPDATED, COLUMN_PLAYERPOINTS]
+      select_column_names = [COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_WORLD, COLUMN_CREATION_DATE, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
+      group_column_names = [COLUMN_PLAYERID, COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
       
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
@@ -65,8 +68,8 @@ class TblHabitat:
       
     def read_from_sql_to_dataframe_alliance(self, include, list_alliances):
       
-      select_column_names = [COLUMN_LASTUPDATED, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
-      group_column_names = [COLUMN_PLAYERID, COLUMN_LASTUPDATED, COLUMN_PLAYERPOINTS]
+      select_column_names = [COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_CREATION_DATE, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
+      group_column_names = [COLUMN_PLAYERID, COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
       
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
@@ -98,7 +101,7 @@ class TblHabitat:
     def write_to_sql(self, pdata):
 
         pdata.to_sql(self._tblname, self._db.get_connection(), flavor = 'mysql', if_exists='append', index = True, index_label = [COLUMN_ALLIANCERANK, COLUMN_ALLIANCEID, 
-        COLUMN_ALLIANCENAME, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_LASTUPDATED])  #cannot use 'replace' since the create table portion fails
+        COLUMN_ALLIANCENAME, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK])  #cannot use 'replace' since the create table portion fails
                             #with error identifier too long (becasuse of the many foreign keys that violate identifier size <63 rule for msyql)
     
                 

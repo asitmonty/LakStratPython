@@ -2,7 +2,8 @@
 import databasehelper_mysql as dbhelper
 import pandas
 
-COLUMN_LASTUPDATED = "lastUpdated"
+COLUMN_LASTUPDATE_LNK = "lastUpdateLnk"
+COLUMN_LASTUPDATED = "lastSnapshot"
 COLUMN_WORLD = "world"
 COLUMN_ID = "id"
 COLUMN_NAME = "name"
@@ -17,7 +18,7 @@ COLUMN_ALLIANCENAME = "allianceName"
 COLUMN_NICK = "nick"
 COLUMN_PLAYERPOINTS = "playerPoints"
 
-COLUMNS_ACTIVITY_TRACKER = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_PLAYERPOINTS, COLUMN_ALLIANCEID, 
+COLUMNS_ACTIVITY_TRACKER = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_PLAYERPOINTS, COLUMN_ALLIANCEID, 
                             COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK]
     
 class TblActivityTracker:
@@ -53,8 +54,8 @@ class TblActivityTracker:
     '''
     def read_from_sql_to_dataframe(self, include, listalliances):
       
-      select_column_names = [COLUMN_LASTUPDATED, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_PLAYERPOINTS]
-      group_column_names = [COLUMN_PLAYERID, COLUMN_LASTUPDATED, COLUMN_PLAYERPOINTS]
+      select_column_names = [COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_PLAYERPOINTS]
+      group_column_names = [COLUMN_PLAYERID, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
       
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
@@ -87,7 +88,7 @@ class TblActivityTracker:
     def write_to_sql(self, pdata):
 
         pdata.to_sql(self._tblname, self._db.get_connection(), flavor = 'mysql', if_exists='append', index = True, index_label = [COLUMN_ALLIANCERANK, COLUMN_ALLIANCEID, 
-        COLUMN_ALLIANCENAME, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_LASTUPDATED])  #cannot use 'replace' since the create table portion fails
+        COLUMN_ALLIANCENAME, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK])  #cannot use 'replace' since the create table portion fails
                             #with error identifier too long (becasuse of the many foreign keys that violate identifier size <63 rule for msyql)
     
     def writeToTable(self, habitat_data):

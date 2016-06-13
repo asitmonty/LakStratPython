@@ -30,6 +30,9 @@ global tblPlayer
 global tblHabitat
 global loglevel
 global ulog
+global lastUpdateLnk
+global lastUpdated
+global lastUpdateDate
 
 global bucket
 
@@ -67,8 +70,11 @@ def download(world, fileType, filename):
     unzip(filename)
 '''
 #download for s3 and local copy
-def download(world, lastUpdateDate, lastUpdated, fileType, updateType):
+def download(world, fileType, updateType):
 
+    global lastUpdateLnk
+    global lastUpdated
+    global lastUpdateDate
     saveAsFileName = world + '_' + lastUpdated + '_' + fileType + '_' + updateType
     url = URL_FORMAT + world + "/" + fileType + updateType + ".json.gz"
 
@@ -130,13 +136,16 @@ def passToDatasource(jfile, fileType):
     if fileType == "habitats" and jfile['points'] > 40: tblHabitat.writeToTable(jfile)
 
 #For saving s3 and local copy 
-def getFileFromUrl(fileType, world, lastUpdateDate, lastUpdated, updateType):
+def getFileFromUrl(fileType, world, updateType):
 
+    global lastUpdateLnk
+    global lastUpdated
+    global lastUpdateDate
     #get the file from url
     if updateType == "last4h":
-      savedFileName = download(world, lastUpdateDate, lastUpdated, fileType, "-last4h")
+      savedFileName = download(world, fileType, "-last4h")
     else:
-      savedFileName = download(world, lastUpdateDate, lastUpdated, fileType, "")
+      savedFileName = download(world, fileType, "")
     return savedFileName
 
 def save2s3(fileType, updateType, file_key_prefix, savedFileName):
@@ -148,8 +157,11 @@ def save2s3(fileType, updateType, file_key_prefix, savedFileName):
     # return success
       
     
-def process(fileType, world, lastUpdated, lastUpdateDate, updateType):
+def process(fileType, world, updateType):
 
+    global lastUpdateLnk
+    global lastUpdated
+    global lastUpdateDate
     ulog.logit(2, "Entering function - process().")
     ''' REPLACED WITH DIRECT PASSING OF UPDATETYPE TO THE FUNCTION GETFILEFROMURL
     if updateType == "last4h":
@@ -157,7 +169,7 @@ def process(fileType, world, lastUpdated, lastUpdateDate, updateType):
     else:
       download(world, fileType, filename)'''
     #for downloading the json file
-    savedFileName = getFileFromUrl(fileType, world, lastUpdateDate, lastUpdated, updateType)
+    savedFileName = getFileFromUrl(fileType, world, updateType)
     
     # for creating local and aws copies
     #For aws file keys
@@ -178,7 +190,8 @@ def process(fileType, world, lastUpdated, lastUpdateDate, updateType):
           elif ("}" in line) and (":" not in line):
             block += "}"
             jfile = json.loads(block)
-            jfile['lastUpdated'] = lastUpdated
+            jfile['lastSnapshot'] = lastUpdated
+            jfile['lastUpdateLnk'] = lastUpdateLnk
             jfile['world'] = world
             passToDatasource(jfile, fileType)
             block = "{"
@@ -191,6 +204,9 @@ def process(fileType, world, lastUpdated, lastUpdateDate, updateType):
 #main flow
 def main():
 
+        global lastUpdateLnk
+        global lastUpdated
+        global lastUpdateDate
         ulog.logit(3, "Starting update from LnK data dump: ")
         ulog.logit(2, "Entering Main function.")
 
@@ -202,10 +218,15 @@ def main():
             url_lastupdated = "http://public-data.lordsandknights.com/LKWorldServer-" + world + "/lastUpdate"
             #TODO - get timestamp from the url (or current system time if url reflects time that has a delta >4 hours to current time)
             #TODO - add the check for updated time >4 hours from current
-            #lastUpdated = read_URL(url_lastupdated)
+
+            lastUpdateLnk = read_URL(url_lastupdated)
+            dateSize = len(lastUpdateLnk)
+            lastUpdateLnk =  lastUpdateLnk[:10] + ' ' + lastUpdateLnk[11:dateSize-1];
+            print lastUpdateLnk
             utctime = datetime.utcnow()
-            lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
+            lastUpdated = utctime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
             lastUpdateDate = utctime.strftime("%Y-%m-%d")
+            ulog.logit(3, "lnk lastupdate timestamp for this run " + lastUpdateLnk)
             ulog.logit(3, "update timestamp for this run " + lastUpdated)
             
             #updateType = "last4h"
@@ -214,9 +235,9 @@ def main():
             #For adding to mysql database
             ulog.logit(3, "update type '" + updateType + "'")
             ulog.logit(3, "Beginning Data Pull...")
-            process("alliances", world, lastUpdated, lastUpdateDate, updateType)
-            process("players", world, lastUpdated, lastUpdateDate, updateType)
-            process("habitats", world, lastUpdated, lastUpdateDate, updateType)
+            process("alliances", world, updateType)
+            process("players", world, updateType)
+            process("habitats", world, updateType)
             ulog.logit(3, "Completed world: " + world)
 
 
