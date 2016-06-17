@@ -21,7 +21,6 @@ import databasehelper_mysql as dbhelper
 import datasourceActivityTracker
 import datasourceActivityTrackerChange
 import datasourceHabitats
-import datasourceAlliance
 import utilities
 import target_finder as clusterizer
 
@@ -29,7 +28,6 @@ global loglevel
 global ulog
 global tbl
 global tbl_habitat
-global tbl_alliance_raw
 global folderpath
 global lastUpdated
 global lastUpdateDate
@@ -64,7 +62,6 @@ bucket_name='lakstrat'
 CASTLE_MAX_POINTS = 290
 
 tbl_habitat = datasourceHabitats.TblHabitat()
-tbl_alliance_raw = datasourceAlliance.TblAlliance()
 tbl_activity_tracker = datasourceActivityTracker.TblActivityTracker()
 tbl_activity_tracker_change = datasourceActivityTrackerChange.TblActivityTracker()
 
@@ -240,30 +237,6 @@ def add_player_details_to_index(df_player_growth, df_player_data):
     df_merged_indexed.index.name = player_colnames_new  #set index name
     return df_merged_indexed
   
-
-def generateAllianceList(allianceIDs):
-        # get list of dates first (current date, last week, 5 last months)
-        # eventually recreate the tracking table (drop the last reading if greater than the activity period) and add current
-        
-        # at present activity tracker table is created beforehand directly in SQL
-        # TODO function to create/refresh/update the activity tracker table using tbl_player and tbl_alliance
-        
-        # read data from sql and create an activity table
-    df_alliance_data = tbl_alliance_raw.read_from_sql_to_dataframe(0, allianceIDs.values())  # load selected rows fromt the player activity tracker table to a dataframe
-    # create a json file with player activity data that can be transmitted via django type web server to the android app
-    # use the df with reset indexes with all data in columns. else the json file becomes unreadable
-    output_file_prefix = "US3_alliances"
-    #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
-    json_alliance_data_output = lastUpdateDate + "/" + output_file_prefix + ".json"
-    jdata = df_alliance_data.to_json(orient='index') # write dataframe to json
-    saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
-    
-    #improve table
-    # 1. filter dates as needed
-# DONE  #2. change title for the columns from raw date to Mar -1 type
-    # 3. dynamically picking up dates for previous 6 months, last 4 weeks and this week days
-
-
 ''' # generatePlayerGrowthTracker
     # generate a dataframe containing player points growth for given players
     # Inputs : 
@@ -306,14 +279,8 @@ def generatePlayerGrowthTracker(allianceIDs):
     
     # create a json file with player activity data that can be transmitted via django type web server to the android app
     # use the df with reset indexes with all data in columns. else the json file becomes unreadable
-    allianceId_list = df_complete_player_growth.allianceId.unique()
-    for alliance_id in allianceId_list:
-        df_alliance_growth = df_complete_player_growth[df_complete_player_growth[COLUMN_ALLIANCEID] == alliance_id]  #filter to current alliance 
-        output_file_prefix = "US3_alliance_"
-        #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
-        json_alliance_data_output = lastUpdateDate + "/alliances/" + output_file_prefix + numpy.array_str(alliance_id) + ".json"
-        jdata = df_alliance_growth.to_json(orient='index') # write dataframe to json
-        saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
+    jdata = df_complete_player_growth.to_json(orient='index') # write dataframe to json
+    return jdata
     
     #improve table
     # 1. filter dates as needed
@@ -404,8 +371,6 @@ def main():
     playerIDs = {'Blade': 1373}
     utctime = datetime.utcnow()
     lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
-
-    #TODO change last update date to that from mysql table, not today's date
     lastUpdateDate = utctime.strftime("%Y-%m-%d")
     folderpath = os.getcwd() + "/" 
     make_sure_path_exists(folderpath + lastUpdateDate)
@@ -414,6 +379,7 @@ def main():
 
     max_fort_radius = 8
     #defining variables for alliances name/Ids to selectively filter data from database
+    json_growth_tracker_output_file = 'activity_tracker.json'
     json_fort_clusters_output_file = 'fort_clusters.json'
     json_habitat_data_output = 'alliance_habitats_dump.json'
     allianceIDs = alliance_all  #new variable that can point to either alliance_legends or others as needed. 
@@ -421,8 +387,8 @@ def main():
     
     #Start processing of Player Growht Tracker
     ulog.logit(3, "Running activity tracker: ")
-    generateAllianceList(allianceIDs)
-    generatePlayerGrowthTracker(allianceIDs)
+    jdata = generatePlayerGrowthTracker(allianceIDs)
+    saveFileToS3(jdata, lastUpdateDate + "/" + json_growth_tracker_output_file)  # write the habitat pairs into json file for future use
     ulog.logit(3, "Finishing player growth tracker.")
     
 
