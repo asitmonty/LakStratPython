@@ -52,10 +52,10 @@ class TblActivityTracker:
         # Output:
                     1. dataframe with selected rows from activity tracker table
     '''
-    def read_from_sql_to_dataframe(self, include, listalliances):
+    def read_from_sql_to_dataframe(self, include, world, listalliances):
       
-      select_column_names = [COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_PLAYERPOINTS]
-      group_column_names = [COLUMN_PLAYERID, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
+      select_column_names = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_PLAYERPOINTS]
+      group_column_names = [COLUMN_WORLD, COLUMN_PLAYERID, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
       
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
@@ -65,13 +65,13 @@ class TblActivityTracker:
       if include == 1:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
             + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, listalliances))
-            + "')" 
+            + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
             )
       else:
             sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
             + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, listalliances))
-            + "')" 
+            + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
             )
 

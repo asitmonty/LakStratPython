@@ -66,7 +66,7 @@ class TblHabitat:
       #df = self.convert_to_unicode_dtype(df)
       return df_player_castle_data
       
-    def read_from_sql_to_dataframe_alliance(self, include, list_alliances):
+    def read_from_sql_to_dataframe_alliance(self, include, world, list_alliances):
       
       select_column_names = [COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_CREATION_DATE, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
       group_column_names = [COLUMN_PLAYERID, COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
@@ -78,13 +78,13 @@ class TblHabitat:
       if include == 1:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
             + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, list_alliances))
-            + "')" 
+            + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
             )
       else:
             sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
             + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, list_alliances))
-            + "')" 
+            + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
             )
       df_player_castle_data = pandas.read_sql(sql, self._db.get_connection())
