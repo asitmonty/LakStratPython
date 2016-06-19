@@ -55,7 +55,7 @@ class TblActivityTracker:
     def read_from_sql_to_dataframe(self, include, world, listalliances):
       
       select_column_names = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK, COLUMN_PLAYERID, COLUMN_NICK, COLUMN_PLAYERPOINTS]
-      group_column_names = [COLUMN_WORLD, COLUMN_PLAYERID, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
+      group_column_names = [COLUMN_WORLD, COLUMN_PLAYERID, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK]
       
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query

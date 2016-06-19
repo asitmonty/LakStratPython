@@ -69,7 +69,7 @@ class TblHabitat:
     def read_from_sql_to_dataframe_alliance(self, include, world, list_alliances):
       
       select_column_names = [COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_CREATION_DATE, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
-      group_column_names = [COLUMN_PLAYERID, COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
+      group_column_names = [COLUMN_PLAYERID, COLUMN_WORLD, COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
       
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query

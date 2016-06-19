@@ -59,30 +59,34 @@ class TblAlliance:
       
       select_column_names = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK]
       group_column_names = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK]
-      
+
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
       group_column_names_string = ",".join(str(x) for x in group_column_names)  # for columns to be grouped by, join as string for use in sql query
-      
+
+      MAX_DATE = "max_date"
       # create the sql query string 
       if include == 1:
-        sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
+        sql = ("SELECT " + column_names_string + " FROM " + self._tblname + " a, "
+          + "( SELECT " + COLUMN_WORLD + " world2, MAX(" + COLUMN_LASTUPDATED + ") "+ MAX_DATE
+            + " FROM " + self._tblname 
+            + " GROUP BY " + COLUMN_WORLD+ ") b "
             + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, listalliances))
-            + "') AND " + COLUMN_LASTUPDATED + " = ( SELECT MAX(" + COLUMN_LASTUPDATED + ")" + " FROM " + self._tblname
-            + ") "
+            + "') AND " + COLUMN_LASTUPDATED + " = " + MAX_DATE
             #+ ") AND " + COLUMN_WORLD + " = '" + WORLD + "'"
             + " GROUP BY " + group_column_names_string
             + " ORDER BY " + COLUMN_ALLIANCERANK + " ASC "
             )
       else:
-            sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
+        sql = ("SELECT " + column_names_string + " FROM " + self._tblname + " a, "
+          + "( SELECT " + COLUMN_WORLD + " world2, MAX(" + COLUMN_LASTUPDATED + ") "+ MAX_DATE
+            + " FROM " + self._tblname 
+            + " GROUP BY " + COLUMN_WORLD+ ") b "
             + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, listalliances))
-            + "') AND " + COLUMN_LASTUPDATED + " = ( SELECT MAX(" + COLUMN_LASTUPDATED + ")" + " FROM " + self._tblname
-            + ") "
+            + "') AND " + COLUMN_LASTUPDATED + " = " + MAX_DATE
             #+ ") AND " + COLUMN_WORLD + " = '" + WORLD + "'"
             + " GROUP BY " + group_column_names_string
             + " ORDER BY " + COLUMN_ALLIANCERANK + " ASC "
-            #+ " GROUP BY " + group_column_names_string
             )
 
       df_all_alliances = pandas.read_sql(sql, self._db.get_connection())
