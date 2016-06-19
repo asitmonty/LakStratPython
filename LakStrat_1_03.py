@@ -118,7 +118,7 @@ def add_formatted_date_column(df):
 def get_pivoted_dates_table(df):
 
     #pivot dataframe to keep player id as rows and dates as columns
-    df_pivot = df.pivot(index=COLUMN_PLAYERID, columns=COLUMN_LASTUPDATED, values=COLUMN_PLAYERPOINTS) # pivot to create table with 
+    df_pivot = df.pivot_table(index=COLUMN_PLAYERID, columns=COLUMN_LASTUPDATED, values=COLUMN_PLAYERPOINTS) # pivot to create table with 
                         #player id as rows index and dates as columns
     #current column dates are in two digit months format. change them to three character month names format for easy reading/display
     snapshot_dates = []
@@ -341,14 +341,14 @@ def generatePlayerGrowthTracker(world, allianceIDs):
         #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
         json_alliance_data_output = lastUpdateDate + "/alliances/" + output_file_prefix + str(long(alliance_id)) + ".json"
         jdata = df_alliance_growth.to_json(orient='index') # write dataframe to json
-        saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
+#        saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
 
     df_alliance_growth = df_complete_player_growth[~df_complete_player_growth[COLUMN_ALLIANCEID].isin(allianceIDs)]  #filter to current alliance 
     output_file_prefix = world_mod + "_alliance_"
     #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
     json_alliance_data_output = lastUpdateDate + "/alliances/" + output_file_prefix + "999" + ".json"
     jdata = df_alliance_growth.to_json(orient='index') # write dataframe to json
-    saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
+#    saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
 
 # Asit 18 jun 2016 - repeating above code just to do clusterization since clusterization takes a long time.
 #used to have it combined 
