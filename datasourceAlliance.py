@@ -1,6 +1,9 @@
   #database class
 import databasehelper_mysql as dbhelper
 import pandas
+import utilities
+import time
+import re
 
 COLUMN_LASTUPDATE_LNK = "lastUpdateLnk"
 COLUMN_LASTUPDATED = "lastSnapshot"
@@ -15,12 +18,14 @@ COLUMN_PUBLICTYPE = "publicType"
 COLUMN_ALLIANCEID = "id"
 COLUMN_ALLIANCERANK = "rank"
 COLUMN_ALLIANCENAME = "name"
+COLUMN_PLAYERIDs = "playerIDs"
+COLUMN_DESC = "description"
 COLUMN_NICK = "nick"
 
 WORLD = "US-3"
 
-COLUMNS_ALLIANCE = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_POINTS,
-                            COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK]
+COLUMNS_ALLIANCE = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_DESC, COLUMN_PLAYERIDs, 
+                    COLUMN_POINTS, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK]
 
 class TblAlliance:
 
@@ -29,6 +34,9 @@ class TblAlliance:
     def __init__(self):
       self._db = dbhelper.DbHelper()
       self._tblname = dbhelper.TBL_ALLIANCE_RAW
+
+    def open_conn(self):
+      self._db = dbhelper.DbHelper()
 
     def sql_do(self, sql, *params):
       self._db.execute(sql, params)
@@ -56,7 +64,9 @@ class TblAlliance:
                     1. dataframe 
     '''
     def read_from_sql_to_dataframe(self, include, listalliances):
-      
+      start_time = time.time()
+      end_time = time.time()
+      #ulog.logit(3, "time to write one row: " + utilities.show_elapsed(start_time, end_time))
       select_column_names = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK]
       group_column_names = [COLUMN_WORLD, COLUMN_LASTUPDATED, COLUMN_LASTUPDATE_LNK, COLUMN_ALLIANCEID, COLUMN_ALLIANCENAME, COLUMN_ALLIANCERANK]
 
@@ -101,20 +111,58 @@ class TblAlliance:
       result = self._db.execute("insert into " + self._tblname + " %s" % format_strings,
               row)
 
+
     def writeToTable(self, alliance_data):
       dict_obj = dict.fromkeys(COLUMNS_ALLIANCE)
       #for l in alliance_properties.iteritems
-      for data, value in alliance_data.iteritems():
+      for name, value in alliance_data.iteritems():
           #playerIDs are arrays inside the JSON blocks (multiple player IDs inside {})
           #code below runs through the array, and converts it into string to store in SQL column
-          if data == 'playerIDs':
+          if name == 'playerIDs':
               lstToStr =','.join(map(str, value))
-              dict_obj[data] = lstToStr  #replace the array with the new string in a new dict variable
+              dict_obj[name] = lstToStr  #replace the array with the new string in a new dict variable
           else:
-              dict_obj[data] = value  #for all other fields, just copy to the new variable that hosts playerIDs as strings
+              dict_obj[name] = value  #for all other fields, just copy to the new variable that hosts playerIDs as strings
       alliance_values = tuple(dict_obj[property] for property in COLUMNS_ALLIANCE)  #create an ordered list according to that of columnsAlliance
       self.insert(alliance_values)
       return alliance_data
+
+
+    def insert_multiple_to_table(self, alliance_data_list):
+      list_alliance_tuple = []
+      #for l in alliance_properties.iteritems
+      for alliance_data in alliance_data_list:
+        dict_obj = dict.fromkeys(COLUMNS_ALLIANCE)
+        for name, value in alliance_data.iteritems():
+            #playerIDs are arrays inside the JSON blocks (multiple player IDs inside {})
+            #code below runs through the array, and converts it into string to store in SQL column
+            if name == 'playerIDs':
+                lstToStr =','.join(map(str, value))
+                dict_obj[name] = lstToStr  #replace the array with the new string in a new dict variable
+            else:
+                dict_obj[name] = value  #for all other fields, just copy to the new variable that hosts playerIDs as strings
+        alliance_tuple = tuple(dict_obj[property] for property in COLUMNS_ALLIANCE)  #create an ordered list according to that of columnsAlliance
+        list_alliance_tuple.append(alliance_tuple)
+
+      self.insert_multiple(list_alliance_tuple)
+      return alliance_data_list
+
+    def insert_multiple(self, list_alliance_tuple):
+      format_strings = "(" + ','.join(COLUMNS_ALLIANCE) + ") "
+      string_tuples = "".join(str(list_alliance_tuple)).strip('[]')
+      string_tuples = re.sub(", u'", ", \'", string_tuples)
+      string_tuples = re.sub(", u\"", ", \"", string_tuples)
+      string_tuples = re.sub("None", "null", string_tuples)
+      insert_query = u"insert into " + self._tblname + " {0} VALUES {1}".format(format_strings,string_tuples)
+      result = self._db.execute(insert_query, None)
+
+
+
+    def close(self):
+      if self._db is not None:
+        self._db.close()
+
+
 
     @property
     def filename(self):

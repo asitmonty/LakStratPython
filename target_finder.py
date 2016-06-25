@@ -70,7 +70,7 @@ def load_jfile(filename):
     f.close()
     return distance_list
     
-def create_habitat_pairs(pdata_unsorted, field_radius):
+def create_habitat_pairs(pdata_unsorted, field_radius, world):
 
     ulog.logit(2, "Entering function create_habitat_pairs_and_save... ")
     distance_list = []
@@ -102,7 +102,7 @@ def create_habitat_pairs(pdata_unsorted, field_radius):
                         yrange_trigger = True
                         distance = compute_distance(x1, y1, x2, y2)
                         if distance <= field_radius and distance != 0:
-                            entry = {'playerID':row_i['playerID'], 'id1':int(row_i['id']), 'id2': int(row_j['id']), 'distance': int(distance)} 
+                            entry = {'world': world, 'playerID':row_i['playerID'], 'id1':int(row_i['id']), 'id2': int(row_j['id']), 'distance': int(distance)} 
                             # int type casted since
                             #sometimes it gives the error JSON not realizable. the row_i['id'] etc turn out to be numpy.int64 data type
                             distance_list.append(entry)

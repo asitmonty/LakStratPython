@@ -1,6 +1,7 @@
   #database class
 import databasehelper_mysql as dbhelper
 import pandas
+import re
 
 COLUMN_SNAPSHOT = 'lastSnapshot'
 COLUMN_LASTUPDATE_LNK = "lastUpdateLnk"
@@ -28,6 +29,11 @@ class TblHabitat:
     def __init__(self):
       self._db = dbhelper.DbHelper()
       self._tblname = dbhelper.TBL_HABITAT_RAW
+
+
+    def open_conn(self):
+      self._db = dbhelper.DbHelper()
+
 
     def sql_do(self, sql, *params):
       self._db.execute(sql, params)
@@ -68,8 +74,9 @@ class TblHabitat:
       
     def read_from_sql_to_dataframe_alliance(self, include, world, list_alliances):
       
+      max_date = "max_date"
       select_column_names = [COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_CREATION_DATE, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
-      group_column_names = [COLUMN_PLAYERID, COLUMN_WORLD, COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_PLAYERPOINTS]
+      group_column_names = [COLUMN_PLAYERID, COLUMN_WORLD, COLUMN_PLAYERPOINTS]
       
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
@@ -77,12 +84,16 @@ class TblHabitat:
       # create the sql query string 
       if include == 1:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
+            + " , (SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
+            + " FROM " + self._tblname + " WHERE " + COLUMN_WORLD + " = '" + world + "') "
             + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, list_alliances))
             + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
             )
       else:
             sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
+            + " , (SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
+            + " FROM " + self._tblname + " WHERE " + COLUMN_WORLD + " = '" + world + "') "
             + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, list_alliances))
             + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
@@ -118,6 +129,40 @@ class TblHabitat:
         habitat_values = tuple(dict_obj[property] for property in COLUMNS_HABITATS)  #create an ordered list according to that of columnsHabitats
         self.insert(habitat_values)
         return habitat_data
+
+
+
+    def insert_multiple_to_table(self, habitat_data_list):
+      list_habitat_tuple = []
+      
+      for habitat_data in habitat_data_list:
+        dict_obj = dict.fromkeys(COLUMNS_HABITATS)
+        for name, value in habitat_data.iteritems():
+            #playerIDs are arrays inside the JSON blocks (multiple player IDs inside {})
+            #code below runs through the array, and converts it into string to store in SQL column
+            if name == 'playerIDs':
+                lstToStr =','.join(map(str, value))
+                dict_obj[name] = lstToStr  #replace the array with the new string in a new dict variable
+            else:
+                dict_obj[name] = value  #for all other fields, just copy to the new variable that hosts playerIDs as strings
+        habitat_tuple = tuple(dict_obj[property] for property in COLUMNS_HABITATS)  #create an ordered list according to that of columnsAlliance
+        list_habitat_tuple.append(habitat_tuple)
+
+      self.insert_multiple(list_habitat_tuple)
+      return habitat_data_list
+
+    def insert_multiple(self, list_habitat_tuple):
+      format_strings = "(" + ','.join(COLUMNS_HABITATS) + ") "
+      string_tuples = "".join(str(list_habitat_tuple)).strip('[]')
+      string_tuples = re.sub(", u'", ", \'", string_tuples)
+      string_tuples = re.sub(", u\"", ", \"", string_tuples)
+      string_tuples = re.sub("None", "null", string_tuples)
+      insert_query = u"insert into " + self._tblname + " {0} VALUES {1}".format(format_strings,string_tuples)
+      result = self._db.execute(insert_query, None)
+
+    def close(self):
+      if self._db is not None:
+        self._db.close()
 
     @property
     def filename(self):

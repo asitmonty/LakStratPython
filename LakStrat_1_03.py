@@ -269,7 +269,7 @@ def generateAllianceList(allianceIDs):
         output_file_prefix = world_mod + "_alliances"
         #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
         json_alliance_data_output = lastUpdateDate + "/" + output_file_prefix + ".json"
-        df_alliances_grouped.set_value(99, COLUMN_ALLIANCE_ID_RAW, 999)
+        df_alliances_grouped.set_value(99, COLUMN_ALLIANCE_ID_RAW, 0)
         df_alliances_grouped.set_value(99, COLUMN_ALLIANCE_NAME_RAW, "others")
         df_alliances_grouped.set_value(99, COLUMN_ALLIANCE_RANK_RAW, 999)
         df_alliances_grouped.set_value(99, COLUMN_WORLD, world)
@@ -409,7 +409,7 @@ def generateFortClusters(include, world, allianceIDs):
         json_fort_clusters_output_file = lastUpdateDate + "/clusters/" + output_file_prefix + numpy.array_str(playerID) + ".json"
         df_player_castles = df_player_castles[df_player_castles[COLUMN_PUBLICTYPE] == 0]  #filter to castles only
         df_player_castles = df_player_castles[habitat_column_names]  #pick only relevant columns
-        distance_list = clusterizer.create_habitat_pairs(df_player_castles, MAX_FORT_RADIUS)
+        distance_list = clusterizer.create_habitat_pairs(df_player_castles, MAX_FORT_RADIUS, world)
         jdata = pandas.DataFrame(distance_list).to_json(orient='index') # write dataframe to json 
         saveFileToS3(jdata, json_fort_clusters_output_file)  # write the habitat pairs into json file for future use
         loop_counter += 1

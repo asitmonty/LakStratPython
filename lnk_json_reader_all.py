@@ -129,12 +129,23 @@ def file_len(fname):
         count = sum(1 for _ in f)
     return count
     
-def passToDatasource(jfile, fileType):
-
-    if fileType == "alliances" and jfile['points'] > 40: tblAlliance.writeToTable(jfile)
-    if fileType == "players" and jfile['points'] > 40: tblPlayer.writeToTable(jfile)
-    if fileType == "habitats" and jfile['points'] > 40: tblHabitat.writeToTable(jfile)
-
+def passToDatasource(list_jdata, fileType):
+    start_time = time.time()
+    
+    if fileType == "alliances" : 
+        tblAlliance.open_conn()
+        tblAlliance.insert_multiple_to_table(list_jdata)
+        tblAlliance.close()
+    if fileType == "players" : 
+        tblPlayer.open_conn()
+        tblPlayer.insert_multiple_to_table(list_jdata)
+        tblPlayer.close()
+    if fileType == "habitats" : 
+        tblHabitat.open_conn()
+        tblHabitat.insert_multiple_to_table(list_jdata)
+        tblHabitat.close()
+    end_time = time.time()
+    #ulog.logit(3, "time to write one row: " + utilities.show_elapsed(start_time, end_time))
 #For saving s3 and local copy 
 def getFileFromUrl(fileType, world, updateType):
 
@@ -162,6 +173,8 @@ def process(fileType, world, updateType):
     global lastUpdateLnk
     global lastUpdated
     global lastUpdateDate
+    
+    start_time = time.time()
     ulog.logit(2, "Entering function - process().")
     ''' REPLACED WITH DIRECT PASSING OF UPDATETYPE TO THE FUNCTION GETFILEFROMURL
     if updateType == "last4h":
@@ -175,11 +188,15 @@ def process(fileType, world, updateType):
     #For aws file keys
     file_key_prefix = lastUpdateDate.strip(' ') + '/' + world + '_' + lastUpdated
     result = save2s3(fileType, updateType, file_key_prefix, savedFileName)
-
+    end_time = time.time()
+    ulog.logit(3, "download file and save to local" + utilities.show_elapsed(start_time, end_time))
     total_lines = file_len(JSON_FILE)
     ulog.logit(3, "total lines in data file " + str(total_lines))
     linecounter = 0
+    block_counter = 0
 
+    start_time_block = time.time()
+    list_jdata = []
     with open(JSON_FILE, "rb") as file:
         block = ""
         for line in file:
@@ -189,15 +206,26 @@ def process(fileType, world, updateType):
             block += "{"
           elif ("}" in line) and (":" not in line):
             block += "}"
+            block = utilities.escape_sql_quotes(block)
             jfile = json.loads(block)
+
             jfile['lastSnapshot'] = lastUpdated
             jfile['lastUpdateLnk'] = lastUpdateLnk
             jfile['world'] = world
-            passToDatasource(jfile, fileType)
+            if jfile['points'] > 40: list_jdata.append(jfile)
+            block_counter += 1
+            if block_counter == 200000:
+                passToDatasource(list_jdata, fileType)
+                list_jdata[:] = []
+                block_counter = 0
+            #passToDatasource(jfile, fileType)
             block = "{"
           else:
             block += line
         print "\n"
+    passToDatasource(list_jdata, fileType)
+    end_time = time.time()
+    ulog.logit(3, "time to process json: " + utilities.show_elapsed(start_time_block, end_time))
     ulog.logit(1, "Exiting function - process().")
 
 
@@ -207,11 +235,15 @@ def main():
         global lastUpdateLnk
         global lastUpdated
         global lastUpdateDate
+        start_time = time.time()
+        end_time = time.time()
+        utilities.show_elapsed(start_time, end_time)
+
         ulog.logit(3, "Starting update from LnK data dump: ")
         ulog.logit(2, "Entering Main function.")
 
         #Process the three files for US-3 and US-11
-        for world in ['US-11', 'US-3']:
+        for world in ['US-3', 'US-11', 'US-1', 'US-2', 'US-4', 'US-5', 'US-6', 'US-7', 'US-8', 'US-9', 'US-10']:
             ulog.logit(3, "Processing world " + world)
             world = world.rstrip('\r\n')
             
