@@ -52,7 +52,7 @@ COLUMN_MAPY = "mapY"
 COLUMN_POINTS = "points"
 COLUMN_PLAYERID = "playerID"
 COLUMN_PUBLICTYPE = "publicType"
-COLUMN_ALLIANCEID = "allianceId"
+COLUMN_ALLIANCEID = "allianceID"
 COLUMN_ALLIANCENAME = "allianceName"
 COLUMN_ALLIANCERANK = "allianceRank"
 COLUMN_NICK = "nick"
@@ -118,7 +118,7 @@ def add_formatted_date_column(df):
 def get_pivoted_dates_table(df):
 
     #pivot dataframe to keep player id as rows and dates as columns
-    df_pivot = df.pivot_table(index=COLUMN_PLAYERID, columns=COLUMN_LASTUPDATED, values=COLUMN_PLAYERPOINTS) # pivot to create table with 
+    df_pivot = df.pivot_table(index=COLUMN_PLAYERID, columns=COLUMN_LASTUPDATE_LNK, values=COLUMN_PLAYERPOINTS) # pivot to create table with 
                         #player id as rows index and dates as columns
     #current column dates are in two digit months format. change them to three character month names format for easy reading/display
     snapshot_dates = []
@@ -257,7 +257,9 @@ def generateAllianceList(allianceIDs):
     # create a json file with player activity data that can be transmitted via django type web server to the android app
     # use the df with reset indexes with all data in columns. else the json file becomes unreadable
     
-    world_list = df_alliance_data.world.unique()
+    #world_list = df_alliance_data.world.unique()
+    dict_world_alliances = {}
+    world_list = [u'US-3', u'US-11']
     for world in world_list:
         df_alliances = df_alliance_data[df_alliance_data[COLUMN_WORLD] == world]  #filter to current alliance 
         df_alliances_grouped = df_alliances[df_alliances[COLUMN_ALLIANCE_RANK_RAW] <= 100]
@@ -278,7 +280,21 @@ def generateAllianceList(allianceIDs):
         jdata = df_alliances_grouped.to_json(orient='index') # write dataframe to json
         saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
         alliance_np = df_alliances_grouped.id.unique()
+        dict_world_alliances[world] = alliance_np.tolist()
         generatePlayerGrowthTracker(world, alliance_np.tolist())
+
+
+# Asit 18 jun 2016 - repeating above code just to do clusterization since clusterization takes a long time.
+#used to have it combined 
+
+    for world, alliance_list in dict_world_alliances.iteritems():
+        for alliance_id in alliance_list:
+            ulog.logit(3, "Running clusterizer and habitat dump: ")
+            generateFortClusters(1, world, [alliance_id])  #one of playerIDs and allianceIDs have the value, other is null
+            ulog.logit(3, "Finishing habitat clustering process.")
+        generateFortClusters(0, world, alliance_list)  #one of playerIDs and allianceIDs have the value, other is null
+    
+
 
     #improve table
     # 1. filter dates as needed
@@ -319,7 +335,7 @@ def generatePlayerGrowthTracker(world, allianceIDs):
     column_names = list(df_complete_player_growth.columns.values)
     df_complete_player_growth = df_complete_player_growth.reset_index()
     df_complete_player_growth.columns = index_names + column_names
-    df_complete_player_growth = pandas.melt(df_complete_player_growth, id_vars=index_names, value_vars=column_names, var_name=COLUMN_LASTUPDATED, value_name=COLUMN_PLAYERPOINTS)
+    df_complete_player_growth = pandas.melt(df_complete_player_growth, id_vars=index_names, value_vars=column_names, var_name=COLUMN_LASTUPDATE_LNK, value_name=COLUMN_PLAYERPOINTS)
     column_names = df_complete_player_growth.columns.values
     df_complete_player_growth = df_complete_player_growth.sort_values([COLUMN_ALLIANCEID,COLUMN_PLAYERPOINTS_TOTAL, COLUMN_PLAYERID], ascending = [True, False, True])  #sort all values by current points as per the last snapshot date
     #filter list to current players only (those who have presence as of the last snapshot date)
@@ -334,31 +350,26 @@ def generatePlayerGrowthTracker(world, allianceIDs):
     # use the df with reset indexes with all data in columns. else the json file becomes unreadable
 
     #allianceId_list = df_complete_player_growth.allianceId.unique()
-    
+    loop_counter = 0
+    rowcount = len(allianceIDs)
     for alliance_id in allianceIDs:
+        utilities.show_progress(loop_counter, rowcount)  #show progress on screen
         df_alliance_growth = df_complete_player_growth[df_complete_player_growth[COLUMN_ALLIANCEID] == alliance_id]  #filter to current alliance 
         output_file_prefix = world_mod + "_alliance_"
         #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
         json_alliance_data_output = lastUpdateDate + "/alliances/" + output_file_prefix + str(long(alliance_id)) + ".json"
         jdata = df_alliance_growth.to_json(orient='index') # write dataframe to json
-#        saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
+        saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
+        loop_counter += 1
 
     df_alliance_growth = df_complete_player_growth[~df_complete_player_growth[COLUMN_ALLIANCEID].isin(allianceIDs)]  #filter to current alliance 
     output_file_prefix = world_mod + "_alliance_"
     #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + numpy.array_str(playerID) + ".json"
     json_alliance_data_output = lastUpdateDate + "/alliances/" + output_file_prefix + "999" + ".json"
     jdata = df_alliance_growth.to_json(orient='index') # write dataframe to json
-#    saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
+    saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
 
-# Asit 18 jun 2016 - repeating above code just to do clusterization since clusterization takes a long time.
-#used to have it combined 
 
-    for alliance_id in allianceIDs:
-        ulog.logit(3, "Running clusterizer and habitat dump: ")
-        generateFortClusters(1, world, [alliance_id])  #one of playerIDs and allianceIDs have the value, other is null
-        ulog.logit(3, "Finishing habitat clustering process.")
-    generateFortClusters(0, world, allianceIDs)  #one of playerIDs and allianceIDs have the value, other is null
-    
     #improve table
     # 1. filter dates as needed
 # DONE  #2. change title for the columns from raw date to Mar -1 type
@@ -453,7 +464,7 @@ def main():
     lastUpdateDate = utctime.strftime("%Y-%m-%d")
     folderpath = os.getcwd() + "/" 
     make_sure_path_exists(folderpath + lastUpdateDate)
-    tbl_habitat._tblname = dbhelper.TBL_HABITAT_US3
+    #tbl_habitat._tblname = dbhelper.TBL_HABITAT_RAW
     
     #defining variables for alliances name/Ids to selectively filter data from database
     json_fort_clusters_output_file = 'fort_clusters.json'

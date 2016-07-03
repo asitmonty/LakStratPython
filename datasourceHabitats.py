@@ -83,19 +83,23 @@ class TblHabitat:
       group_column_names_string = ",".join(str(x) for x in group_column_names)  # for columns to be grouped by, join as string for use in sql query
       # create the sql query string 
       if include == 1:
-        sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
-            + " , (SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
-            + " FROM " + self._tblname + " WHERE " + COLUMN_WORLD + " = '" + world + "') "
-            + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, list_alliances))
-            + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
+        sql = ("SELECT " + column_names_string + " FROM " + self._tblname + " , " 
+            + "(SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
+            + " FROM " + self._tblname 
+            + " WHERE " + COLUMN_WORLD + " = '" + world + "') temp"
+            + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, list_alliances)) + "')" 
+            + " AND " + COLUMN_WORLD + " = '" + world + "'" 
+            + " AND " + COLUMN_LASTUPDATE_LNK + " = temp." + max_date 
             #+ " GROUP BY " + group_column_names_string
             )
       else:
             sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
-            + " , (SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
-            + " FROM " + self._tblname + " WHERE " + COLUMN_WORLD + " = '" + world + "') "
-            + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, list_alliances))
-            + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
+            + "(SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
+            + " FROM " + self._tblname 
+            + " WHERE " + COLUMN_WORLD + " = '" + world + "') temp"
+            + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, list_alliances)) + "')" 
+            + " AND " + COLUMN_WORLD + " = '" + world + "'" 
+            + " AND " + COLUMN_LASTUPDATE_LNK + " = temp." + max_date 
             #+ " GROUP BY " + group_column_names_string
             )
       df_player_castle_data = pandas.read_sql(sql, self._db.get_connection())
@@ -103,6 +107,25 @@ class TblHabitat:
       return df_player_castle_data
       
       
+    def read_from_sql_to_dataframe_world(self, include, world):
+      
+      max_date = "max_date"
+      select_column_names = [COLUMN_LASTUPDATE_LNK, COLUMN_WORLD, COLUMN_ID, COLUMN_PLAYERID, COLUMN_ALLIANCEID]
+
+      
+      # create the joined strings for column names for use in sql query string
+      column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
+      # create the sql query string 
+      if include == 1:
+        sql = ("SELECT " + column_names_string + " FROM " + self._tblname
+            + " WHERE " + COLUMN_WORLD + " = '" + world + "' " 
+            #+ " GROUP BY " + group_column_names_string
+            )
+      df_player_castle_data = pandas.read_sql(sql, self._db.get_connection())
+      #df = self.convert_to_unicode_dtype(df)
+      return df_player_castle_data
+
+
     def insert(self, row):
       format_strings = "(" + ','.join(COLUMNS_HABITATS) + ") values (" + ','.join(['%s'] * len(COLUMNS_HABITATS)) + ")"
       result = self._db.execute("insert into " + self._tblname + " %s" % format_strings,
@@ -117,7 +140,6 @@ class TblHabitat:
     
                 
     def writeToTable(self, habitat_data):
-
         dict_obj = dict.fromkeys(COLUMNS_HABITATS)
         for data, value in habitat_data.iteritems():
             #playerIDs are arrays inside the JSON blocks (multiple player IDs inside {})
@@ -134,31 +156,23 @@ class TblHabitat:
 
     def insert_multiple_to_table(self, habitat_data_list):
       list_habitat_tuple = []
-      
+      #for l in alliance_properties.iteritems
       for habitat_data in habitat_data_list:
         dict_obj = dict.fromkeys(COLUMNS_HABITATS)
         for name, value in habitat_data.iteritems():
             #playerIDs are arrays inside the JSON blocks (multiple player IDs inside {})
             #code below runs through the array, and converts it into string to store in SQL column
-            if name == 'playerIDs':
-                lstToStr =','.join(map(str, value))
-                dict_obj[name] = lstToStr  #replace the array with the new string in a new dict variable
-            else:
-                dict_obj[name] = value  #for all other fields, just copy to the new variable that hosts playerIDs as strings
-        habitat_tuple = tuple(dict_obj[property] for property in COLUMNS_HABITATS)  #create an ordered list according to that of columnsAlliance
+            if value == 'None':
+              value = 'null'
+            dict_obj[name] = value#.encode('utf8')  #for all other fields, just copy to the new variable that hosts playerIDs as strings
+        habitat_tuple = tuple(dict_obj[item] for item in COLUMNS_HABITATS)  #create an ordered list according to that of columnsAlliance
         list_habitat_tuple.append(habitat_tuple)
+      format_strings = " (" + ','.join(COLUMNS_HABITATS) + ") "
+      insert_query = "insert into " + self._tblname + format_strings + " VALUES (" + ','.join(['%s'] * len(COLUMNS_HABITATS)) + ")"
+      result = self._db.executemany(insert_query, list_habitat_tuple)
+      return result
 
-      self.insert_multiple(list_habitat_tuple)
-      return habitat_data_list
 
-    def insert_multiple(self, list_habitat_tuple):
-      format_strings = "(" + ','.join(COLUMNS_HABITATS) + ") "
-      string_tuples = "".join(str(list_habitat_tuple)).strip('[]')
-      string_tuples = re.sub(", u'", ", \'", string_tuples)
-      string_tuples = re.sub(", u\"", ", \"", string_tuples)
-      string_tuples = re.sub("None", "null", string_tuples)
-      insert_query = u"insert into " + self._tblname + " {0} VALUES {1}".format(format_strings,string_tuples)
-      result = self._db.execute(insert_query, None)
 
     def close(self):
       if self._db is not None:

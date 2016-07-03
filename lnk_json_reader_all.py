@@ -208,7 +208,6 @@ def process(fileType, world, updateType):
             block += "}"
             block = utilities.escape_sql_quotes(block)
             jfile = json.loads(block)
-
             jfile['lastSnapshot'] = lastUpdated
             jfile['lastUpdateLnk'] = lastUpdateLnk
             jfile['world'] = world
@@ -221,7 +220,8 @@ def process(fileType, world, updateType):
             #passToDatasource(jfile, fileType)
             block = "{"
           else:
-            block += line
+            block += unicode(line)
+
         print "\n"
     passToDatasource(list_jdata, fileType)
     end_time = time.time()

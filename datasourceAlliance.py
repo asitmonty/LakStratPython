@@ -118,7 +118,7 @@ class TblAlliance:
       for name, value in alliance_data.iteritems():
           #playerIDs are arrays inside the JSON blocks (multiple player IDs inside {})
           #code below runs through the array, and converts it into string to store in SQL column
-          if name == 'playerIDs':
+          if name == COLUMN_PLAYERIDs:
               lstToStr =','.join(map(str, value))
               dict_obj[name] = lstToStr  #replace the array with the new string in a new dict variable
           else:
@@ -136,26 +136,18 @@ class TblAlliance:
         for name, value in alliance_data.iteritems():
             #playerIDs are arrays inside the JSON blocks (multiple player IDs inside {})
             #code below runs through the array, and converts it into string to store in SQL column
-            if name == 'playerIDs':
+            if value == 'None':
+              value = 'null'
+            dict_obj[name] = value
+            if name == COLUMN_PLAYERIDs:
                 lstToStr =','.join(map(str, value))
                 dict_obj[name] = lstToStr  #replace the array with the new string in a new dict variable
-            else:
-                dict_obj[name] = value  #for all other fields, just copy to the new variable that hosts playerIDs as strings
-        alliance_tuple = tuple(dict_obj[property] for property in COLUMNS_ALLIANCE)  #create an ordered list according to that of columnsAlliance
+        alliance_tuple = tuple(dict_obj[item] for item in COLUMNS_ALLIANCE)  #create an ordered list according to that of columnsAlliance
         list_alliance_tuple.append(alliance_tuple)
-
-      self.insert_multiple(list_alliance_tuple)
-      return alliance_data_list
-
-    def insert_multiple(self, list_alliance_tuple):
-      format_strings = "(" + ','.join(COLUMNS_ALLIANCE) + ") "
-      string_tuples = "".join(str(list_alliance_tuple)).strip('[]')
-      string_tuples = re.sub(", u'", ", \'", string_tuples)
-      string_tuples = re.sub(", u\"", ", \"", string_tuples)
-      string_tuples = re.sub("None", "null", string_tuples)
-      insert_query = u"insert into " + self._tblname + " {0} VALUES {1}".format(format_strings,string_tuples)
-      result = self._db.execute(insert_query, None)
-
+      format_strings = " (" + ','.join(COLUMNS_ALLIANCE) + ") "
+      insert_query = "insert into " + self._tblname + format_strings + " VALUES (" + ','.join(['%s'] * len(COLUMNS_ALLIANCE)) + ")"
+      result = self._db.executemany(insert_query, list_alliance_tuple)
+      return result
 
 
     def close(self):
