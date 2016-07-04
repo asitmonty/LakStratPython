@@ -78,7 +78,7 @@ class TblAlliance:
       # create the sql query string 
       if include == 1:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname + " a, "
-          + "( SELECT " + COLUMN_WORLD + " world2, MAX(" + COLUMN_LASTUPDATED + ") "+ MAX_DATE
+          + " ( SELECT " + COLUMN_WORLD + " world2, MAX(" + COLUMN_LASTUPDATED + ") "+ MAX_DATE
             + " FROM " + self._tblname 
             + " GROUP BY " + COLUMN_WORLD+ ") b "
             + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, listalliances))
@@ -89,7 +89,7 @@ class TblAlliance:
             )
       else:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname + " a, "
-          + "( SELECT " + COLUMN_WORLD + " world2, MAX(" + COLUMN_LASTUPDATED + ") "+ MAX_DATE
+          + " ( SELECT " + COLUMN_WORLD + " world2, MAX(" + COLUMN_LASTUPDATED + ") "+ MAX_DATE
             + " FROM " + self._tblname 
             + " GROUP BY " + COLUMN_WORLD+ ") b "
             + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, listalliances))

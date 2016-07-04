@@ -94,7 +94,7 @@ class TblPlayer:
       
       if include == 1:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname + " , " 
-            + "(SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
+            + " (SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
             + " FROM " + self._tblname 
             + " WHERE " + COLUMN_WORLD + " = '" + world + "') temp"
             + " WHERE " + COLUMN_WORLD + " = '" + world + "' "

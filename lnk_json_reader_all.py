@@ -131,7 +131,7 @@ def file_len(fname):
     
 def passToDatasource(list_jdata, fileType):
     start_time = time.time()
-    
+
     if fileType == "alliances" : 
         tblAlliance.open_conn()
         tblAlliance.insert_multiple_to_table(list_jdata)

@@ -2,7 +2,9 @@ import boto3
 import sys
 import botocore
 import utilities
-
+import os  
+from os import listdir
+from os.path import isfile, join
 class AwsS3:
     global bucket_name
     global bucket
@@ -67,6 +69,37 @@ class AwsS3:
             #print "File upload failed. File name:'" + key + "'. Bucket: '" + bucket_name + "'"
             success = 1
         return success
+
+    def writeFileToS3(self, file, key, mode):
+        success = 0
+        #set exists True to check if the connection was successful
+        #ulog.logit(2, "Connected to s3 bucket: " + bucket_name)
+        object_exists = self.check_if_object_exists(key)
+        if(object_exists):
+            #ulog.logit(2, "File '" + key + "' uploaded to s3 bucket '" + bucket_name + "'")
+#            self._bucket.put_object(Key=key, Body=data)
+            self._bucket.upload_file(file, key)
+            success = 1
+        else:
+#            self.get_object(key).put(Body=data)
+            self.get_object(key)
+            self._bucket.upload_file(file, key)
+            #ulog.logit(3, "File upload failed. File name:'" + key + "'. Bucket: '" + bucket_name + "'")
+            #print "File upload failed. File name:'" + key + "'. Bucket: '" + bucket_name + "'"
+            success = 1
+        return success
+
+
+    def writeFolderToS3(self, key_path, mode, local_folder_path):
+
+        list_dir = listdir(local_folder_path)
+        rowcount = len(list_dir)
+        loop_counter = 0
+        for fn in list_dir:
+            utilities.show_progress(loop_counter, rowcount)  #show progress on screen
+            if isfile(join(local_folder_path, fn)):
+                a = self.writeFileToS3(local_folder_path + fn, key_path + fn, 'w+')
+            loop_counter += 1
 
 
     def get_object(self, key):

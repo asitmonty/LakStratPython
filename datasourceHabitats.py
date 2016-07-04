@@ -77,14 +77,13 @@ class TblHabitat:
       max_date = "max_date"
       select_column_names = [COLUMN_SNAPSHOT, COLUMN_LASTUPDATE_LNK, COLUMN_CREATION_DATE, COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_POINTS, COLUMN_PLAYERID, COLUMN_PUBLICTYPE, COLUMN_ALLIANCEID]
       group_column_names = [COLUMN_PLAYERID, COLUMN_WORLD, COLUMN_PLAYERPOINTS]
-      
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
       group_column_names_string = ",".join(str(x) for x in group_column_names)  # for columns to be grouped by, join as string for use in sql query
       # create the sql query string 
       if include == 1:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname + " , " 
-            + "(SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
+            + " (SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
             + " FROM " + self._tblname 
             + " WHERE " + COLUMN_WORLD + " = '" + world + "') temp"
             + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, list_alliances)) + "')" 
@@ -93,8 +92,8 @@ class TblHabitat:
             #+ " GROUP BY " + group_column_names_string
             )
       else:
-            sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
-            + "(SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
+            sql = ("SELECT " + column_names_string + " FROM " + self._tblname  + " , " 
+            + " (SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
             + " FROM " + self._tblname 
             + " WHERE " + COLUMN_WORLD + " = '" + world + "') temp"
             + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, list_alliances)) + "')" 
@@ -111,8 +110,6 @@ class TblHabitat:
       
       max_date = "max_date"
       select_column_names = [COLUMN_LASTUPDATE_LNK, COLUMN_WORLD, COLUMN_ID, COLUMN_PLAYERID, COLUMN_ALLIANCEID]
-
-      
       # create the joined strings for column names for use in sql query string
       column_names_string = ",".join(str(x) for x in select_column_names)  # for columns to be extracted, join as string for use in sql query
       # create the sql query string 
