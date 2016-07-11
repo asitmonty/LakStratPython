@@ -33,7 +33,7 @@ class TblAlliance:
 
     def __init__(self):
       self._db = dbhelper.DbHelper()
-      self._tblname = dbhelper.TBL_ALLIANCE_RAW
+      self._tblname = dbhelper.TBL_ALLIANCE
 
     def open_conn(self):
       self._db = dbhelper.DbHelper()

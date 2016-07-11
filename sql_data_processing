@@ -1,0 +1,15 @@
+import sqlite3
+
+
+
+
+if len(sys.argv) == 2:
+  logLevel = int(sys.argv[1])
+else:
+  logLevel = 3
+
+ulog = utilities.utilities(logLevel)
+
+tblAlliance = datasourceAlliance.TblAlliance()
+tblPlayer = datasourcePlayers.TblPlayer()
+tblHabitat = datasourceHabitats.TblHabitat()

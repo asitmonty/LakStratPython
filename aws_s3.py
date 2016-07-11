@@ -108,7 +108,7 @@ class AwsS3:
         if (not object_exists):
             obj = self._bucket.put_object(Key=key)
         else:
-            obj = self._bucket.Object(Key=key)
+            obj = self._bucket.Object(key)
         return obj
 
 

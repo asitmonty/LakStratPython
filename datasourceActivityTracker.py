@@ -47,7 +47,8 @@ class TblActivityTracker:
             
     ''' # Loads data from the 'player_activity_tracker' table into a dataframe
         # Inputs : 
-                    1. 'include' :- 1 to use alliances passed as argument. 0 to use all alliances excluding the list of alliances passed as argument
+                    1. 'include' : 1 to use alliances passed as argument. 0 to use all alliances excluding the list of alliances passed as argument
+                                  '-1' to select all
                     2. 'listalliances' :- list of alliances to include or exclude 
         # Output:
                     1. dataframe with selected rows from activity tracker table
@@ -64,15 +65,20 @@ class TblActivityTracker:
       # create the sql query string 
       if include == 1:
         sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
-            + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, listalliances))
-            + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
+            + " WHERE " + COLUMN_ALLIANCEID + " IN ('" + "','".join(map(str, listalliances))+ "')" 
+            + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
             )
-      else:
+      elif (include == 0):
             sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
             + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, listalliances))
             + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
+            + " ORDER BY "+ COLUMN_LASTUPDATE_LNK + " DESC LIMIT 6"
+            )
+      else :
+            sql = ("SELECT * FROM " + self._tblname 
+            + " WHERE  " + COLUMN_WORLD + " = '" + world + "'"
             )
 
       df_player_activity = pandas.read_sql(sql, self._db.get_connection())
