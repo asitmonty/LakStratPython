@@ -71,8 +71,12 @@ class TblActivityTracker:
             )
       elif (include == 0):
             sql = ("SELECT " + column_names_string + " FROM " + self._tblname 
-            + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, listalliances))
-            + "')" + " AND " + COLUMN_WORLD + " = '" + world + "'"
+            + " WHERE " 
+            + "(" 
+            + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, listalliances))+ "')" 
+            + " OR " + COLUMN_ALLIANCEID + " IS NULL " 
+            + ")" 
+            + " AND " + COLUMN_WORLD + " = '" + world + "'"
             #+ " GROUP BY " + group_column_names_string
             + " ORDER BY "+ COLUMN_LASTUPDATE_LNK + " DESC LIMIT 6"
             )

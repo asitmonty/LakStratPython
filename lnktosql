@@ -3,5 +3,5 @@
 export PATH="//anaconda/bin:$PATH"
 
 echo Nellie88 | sudo -S $MYSQL_HOME/bin/mysqld_safe &
-cd ~/Documents/Workspace/Projects/LakStrat/python_scripts/
+cd ~/Documents/Workspace/Projects/LakVyuh/python_scripts/
 python lnk_json_reader_all.py 2>&1 | tee log/$(date +%Y%m%d-%H%M%S).txt

@@ -19,7 +19,6 @@ import numpy
 
 import databasehelper_mysql as dbhelper
 import datasourceActivityTracker
-import datasourceActivityTrackerChange
 import datasourceHabitats
 import datasourceAlliance
 import datasourcePlayers
@@ -74,7 +73,6 @@ tbl_player = datasourcePlayers.TblPlayer()
 tbl_alliance = datasourceAlliance.TblAlliance()
 tbl_alliance_raw = datasourceAlliance.TblAlliance()
 tbl_activity_tracker = datasourceActivityTracker.TblActivityTracker()
-tbl_activity_tracker_change = datasourceActivityTrackerChange.TblActivityTracker()
 
 if len(sys.argv) == 2:
   logLevel = int(sys.argv[1])
@@ -140,7 +138,7 @@ def habitatChanges(include, world,):
     #print df_unique_alliances
 
     
-def habitatChanges_players(include, world,):
+def habitatChanges_players(include, world):
     global MAX_FORT_RADIUS
     global folderpath
     global lastUpdateDate
@@ -165,7 +163,7 @@ def habitatChanges_players(include, world,):
     df_player_data.to_csv('player_map.csv', encoding='utf-8')
     import itertools
     list_id = df_player_data[COLUMN_ID].tolist()
-    list_allianceId = df_player_data['allianceId'].tolist()
+    list_allianceId = df_player_data[COLUMN_ALLIANCEID].tolist()
     dict_player_data = dict(itertools.izip(list_id, list_allianceId))
     print df_pivot
     df_pivot[column_names[0]] = df_pivot[column_names[0]].apply(lambda x: dict_player_data.get(x))
@@ -234,7 +232,7 @@ def main():
     global lastUpdated
 
 
-    habitatChanges_players(1, 'US-11')
+    habitatChanges_players(1, 'US-10')
     #habitatChanges(1, 'US-3')
 
 
