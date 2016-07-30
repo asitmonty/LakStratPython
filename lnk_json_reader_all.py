@@ -266,31 +266,31 @@ def main():
             #For adding to mysql database
             ulog.logit(3, "update type '" + updateType + "'")
             ulog.logit(3, "Beginning Data Pull...")
-            # process("alliances", world, updateType)
-            # process("players", world, updateType)
-            # process("habitats", world, updateType)
+            process("alliances", world, updateType)
+            process("players", world, updateType)
+            process("habitats", world, updateType)
             ulog.logit(3, "Completed world: " + world)
 
 
             
-        with open(folderpath + 'worlds.txt', "rb") as worlds:
-            for world in worlds:
-                ulog.logit(3, "Processing world " + world)
-                world = world.rstrip('\r\n')
+        # with open(folderpath + 'worlds.txt', "rb") as worlds:
+        #     for world in worlds:
+        #         ulog.logit(3, "Processing world " + world)
+        #         world = world.rstrip('\r\n')
                 
-                url_lastupdated = "http://public-data.lordsandknights.com/LKWorldServer-" + world + "/lastUpdate"
-                #lastUpdated = read_URL(url_lastupdated)
-                utctime = datetime.utcnow()
-                lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
-                lastUpdateDate = utctime.strftime("%Y-%m-%d")
-                ulog.logit(3, "update timestamp for this run " + lastUpdated)
+        #         url_lastupdated = "http://public-data.lordsandknights.com/LKWorldServer-" + world + "/lastUpdate"
+        #         #lastUpdated = read_URL(url_lastupdated)
+        #         utctime = datetime.utcnow()
+        #         lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
+        #         lastUpdateDate = utctime.strftime("%Y-%m-%d")
+        #         ulog.logit(3, "update timestamp for this run " + lastUpdated)
 
-                updateType = "full"
+        #         updateType = "full"
 
-                ulog.logit(3, "update type '" + updateType + "'")
-                ulog.logit(3, "Beginning Data Pull...")
+        #         ulog.logit(3, "update type '" + updateType + "'")
+        #         ulog.logit(3, "Beginning Data Pull...")
 
-                process("players", world, updateType)
+        #         process("players", world, updateType)
 
 if __name__ == "__main__":
   main()

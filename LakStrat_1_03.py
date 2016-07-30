@@ -297,6 +297,7 @@ def generateAllianceList(allianceIDs):
                 generateFortClusters(world, df_player_habitat_data)  #one of playerIDs and allianceIDs have the value, other is null
         df_player_habitat_data = tbl_habitat.read_from_sql_to_dataframe_alliance(0, world, alliance_list)  # load selected rows fromt the habitat table to a dataframe
         rowcount = df_player_habitat_data.playerID.unique().size
+        total_players += rowcount
         ulog.logit(3, "total alliance players (above 100): " + str(rowcount))
         generateFortClusters(world, df_player_habitat_data)  #one of playerIDs and allianceIDs have the value, other is null
     end_time = time.time()
@@ -392,10 +393,10 @@ def generatePlayerGrowthTracker(world, allianceIDs):
         utilities.show_progress(loop_counter, rowcount)  #show progress on screen
         output_file_prefix = world_mod + "_alliance_"
         #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + np.array_str(playerID) + ".json"
-        if (alliance_id != max_alliance_id):
+        if (alliance_id > 0):
             df_alliance_growth = df_complete_player_growth[df_complete_player_growth[COLUMN_ALLIANCEID] == alliance_id]  #filter to current alliance 
             json_alliance_data_output = lastUpdateDate + "/alliances/" + output_file_prefix + str(long(alliance_id)) + ".json"
-        else:
+        elif (alliance_id == -1):
             df_alliance_growth = df_complete_player_growth[df_complete_player_growth[COLUMN_ALLIANCEID].isnull()]  #filter to current alliance 
             json_alliance_data_output = lastUpdateDate + "/alliances/" + output_file_prefix + "none" + ".json"
         if not df_alliance_growth.empty:

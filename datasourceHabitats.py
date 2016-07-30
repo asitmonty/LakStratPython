@@ -96,8 +96,10 @@ class TblHabitat:
             + " (SELECT MAX(" + COLUMN_LASTUPDATE_LNK + ") as " + max_date 
             + " FROM " + self._tblname 
             + " WHERE " + COLUMN_WORLD + " = '" + world + "') temp"
-            + " WHERE " + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, list_alliances)) + "')" 
-            + " AND " + COLUMN_WORLD + " = '" + world + "'" 
+            + " WHERE (" 
+            + COLUMN_ALLIANCEID + " NOT IN ('" + "','".join(map(str, list_alliances)) + "') OR " 
+            + COLUMN_ALLIANCEID + " IS NULL " 
+            + ") AND " + COLUMN_WORLD + " = '" + world + "'" 
             + " AND " + COLUMN_LASTUPDATE_LNK + " = temp." + max_date 
             #+ " GROUP BY " + group_column_names_string
             )
