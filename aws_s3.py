@@ -163,7 +163,6 @@ class AwsS3:
             if page_iterator:
                 for page in page_iterator:
                     if 'Contents' in page:
-                        print "contents there"
                         for item in page['Contents']:
                             list_key.append(item['Key'].split('/')[-1])
             return list_key
@@ -198,7 +197,7 @@ class AwsS3:
         missing_key_list = []
         local_folder_path = folderpath + key_path
         list_dir = listdir(local_folder_path)
-        rowcount = len(list_dir)
+        rowcount = 0
         start_time = time.time()
         key_list = self.get_key_list_for_path(key_path)
         if key_list:
@@ -210,8 +209,9 @@ class AwsS3:
             missing_key_list = list_dir
             missing_key_list.sort()
         loop_counter = 0
-        #iterate first for exisitng keys
         if (overwrite and existing_keys_list):
+            rowcount = len(list_dir)
+            #iterate first for exisitng keys
             for fn in existing_keys_list:
                 time_elapsed = time.time() - start_time
                 utilities.show_progress_time(loop_counter, rowcount, time_elapsed)  #show progress on screen
@@ -220,6 +220,8 @@ class AwsS3:
                     file = local_folder_path + fn
                     self._bucket.upload_file(file, key)
                 loop_counter += 1
+        else:
+            rowcount = len(missing_key_list)
         #iterate next for new keys
         for fn in missing_key_list:
             time_elapsed = time.time() - start_time

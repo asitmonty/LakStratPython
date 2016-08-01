@@ -576,7 +576,7 @@ def main():
     #Start processing of Player Growht Tracker
     ulog.logit(3, "Running activity tracker: ")
     alliance_all = {'none':0}
-    generateAllianceList(alliance_all)
+#    generateAllianceList(alliance_all)
     ulog.logit(3, "Finishing player growth tracker.")
     
     lastUpdateDate = "2016-08-01"
