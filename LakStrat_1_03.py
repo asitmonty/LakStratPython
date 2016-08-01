@@ -31,7 +31,11 @@ global lastUpdated
 global lastUpdateDate
 global MAX_FORT_RADIUS
 global bucket_name
+global world_list
 
+world_list = [u'US-3',u'US-11',u'US-10',u'US-9',u'US-8',u'US-7',u'US-6',u'US-5',u'US-4',u'US-2',u'US-1']
+alliance_legends = {"legends":26562}
+playerIDs = {'Blade': 1373}
 
 date_split_character = ' '
 folderpath = ''
@@ -241,6 +245,7 @@ def add_player_details_to_index(df_player_growth, df_player_data):
   
 
 def generateAllianceList(allianceIDs):
+    global world_list
         # get list of dates first (current date, last week, 5 last months)
         # eventually recreate the tracking table (drop the last reading if greater than the activity period) and add current
         
@@ -256,7 +261,7 @@ def generateAllianceList(allianceIDs):
     ulog.logit(3, "read alliance data: " + utilities.show_elapsed(start_time, end_time))
     #world_list = df_alliance_data.world.unique()
     dict_world_alliances = {}
-    world_list = [u'US-3',u'US-11']
+    world_count = 0
     for world in world_list:
         start_time = time.time()
         df_alliances = df_alliance_data[df_alliance_data[COLUMN_WORLD] == world]  #filter to current alliance 
@@ -272,12 +277,20 @@ def generateAllianceList(allianceIDs):
         df_alliances_grouped = add_alliance(df_alliances_grouped, 99, 0, "others", 999, world, 0, 0)
         df_alliances_grouped = add_alliance(df_alliances_grouped, 100, -1, "<unaligned>", 1000, world, 0, 0)
         jdata = df_alliances_grouped.to_json(orient='index') # write dataframe to json
-        saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
+        saveFileToS3(jdata, json_alliance_data_output)  # save alliance group file to S3
         alliance_np = df_alliances_grouped.id.unique()
         dict_world_alliances[world] = alliance_np.tolist()
         generatePlayerGrowthTracker(world, alliance_np.tolist())
+        world_count += 1
         end_time = time.time()
-        ulog.logit(3, "time to write growth tracker: " + utilities.show_elapsed(start_time, end_time))
+        ulog.logit(3, "World " + world + utilities.show_elapsed(start_time, end_time))
+    end_time = time.time()
+    ulog.logit(3, "time to locally process worlds... "+ utilities.show_elapsed(start_time, end_time))   
+    alliance_count = 102 * world_count 
+    ulog.logit(3, "Saving " + str(alliance_count) +" growth tracker files to S3... ")
+    saveAllToS3(lastUpdateDate + "/alliances/")
+    end_time = time.time()
+    ulog.logit(3, "Total time to process growth tracker: " + utilities.show_elapsed(start_time, end_time))
     
 
 # Asit 18 jun 2016 - repeating above code just to do clusterization since clusterization takes a long time.
@@ -287,30 +300,41 @@ def generateAllianceList(allianceIDs):
     total_players = 0
     start_time = time.time()
     for world, alliance_list in dict_world_alliances.iteritems():
-        df_alliance_data = tbl_habitat.read_from_sql_to_dataframe_alliance(1, world, alliance_list)  # load selected rows fromt the habitat table to a dataframe
-        rowcount = df_alliance_data.playerID.unique().size
-        total_players += rowcount
-        ulog.logit(3, "total alliance players (sub 100): " + str(rowcount))
+        ulog.logit(3, "World " + world)
+        total_alliance_players = 0
+        above100_player_count = 0
+        start_time = time.time()
+        df_alliance_data_below100 = tbl_habitat.read_from_sql_to_dataframe_alliance(1, world, alliance_list)  # load selected rows fromt the habitat table to a dataframe
+        df_alliance_data_over100 = tbl_habitat.read_from_sql_to_dataframe_alliance(0, world, alliance_list)  # load selected rows fromt the habitat table to a dataframe
+        total_alliance_players += df_alliance_data_below100.playerID.unique().size  # add player count in alliances with rank < 100
+        above100_player_count += df_alliance_data_over100.playerID.unique().size  # add player count in alliances with rank > 100
+        total_alliance_players += above100_player_count
+        total_players += total_alliance_players  #add to running total for all world players
+        player_count = 0
+        alliance_count = len(alliance_list)
         for alliance_id in alliance_list:
-            df_player_habitat_data = df_alliance_data[df_alliance_data[COLUMN_ALLIANCEID] == alliance_id]
-            if (not df_player_habitat_data.empty):
-                generateFortClusters(world, df_player_habitat_data)  #one of playerIDs and allianceIDs have the value, other is null
-        df_player_habitat_data = tbl_habitat.read_from_sql_to_dataframe_alliance(0, world, alliance_list)  # load selected rows fromt the habitat table to a dataframe
-        rowcount = df_player_habitat_data.playerID.unique().size
-        total_players += rowcount
-        ulog.logit(3, "total alliance players (above 100): " + str(rowcount))
-        generateFortClusters(world, df_player_habitat_data)  #one of playerIDs and allianceIDs have the value, other is null
+            time_elapsed = time.time() - start_time
+            utilities.show_progress_time(player_count, total_alliance_players, time_elapsed)  #show progress on screen
+            df_alliance_habitat_data = df_alliance_data_below100[df_alliance_data_below100[COLUMN_ALLIANCEID] == alliance_id]
+            player_count += df_alliance_habitat_data.playerID.unique().size
+            if (not df_alliance_habitat_data.empty):
+                generateFortClusters(world, df_alliance_habitat_data)  #one of playerIDs and allianceIDs have the value, other is null
+        utilities.show_progress_time(player_count, total_alliance_players, time_elapsed)  #show progress on screen
+        generateFortClusters(world, df_alliance_data_over100)  #one of playerIDs and allianceIDs have the value, other is null
+        utilities.clear_progress_bar()  #show progress on screen
+        end_time = time.time()
+        ulog.logit(3, str(total_alliance_players) + " players" + utilities.show_elapsed(start_time, end_time))
     end_time = time.time()
-    ulog.logit(3, "\nprocess all habitat and cluster: " +  utilities.show_elapsed(start_time, end_time))
+    ulog.logit(3, "\nall habitat and cluster local " +  utilities.show_elapsed(start_time, end_time))
 
     start_time = time.time()
     saveAllToS3(lastUpdateDate + "/clusters/")
     end_time = time.time()
-    ulog.logit(3, "write " + str(total_players) + " clusters to s3: " +  utilities.show_elapsed(start_time, end_time))
+    ulog.logit(3, "write " + str(total_players) + " cluster files to s3 " +  utilities.show_elapsed(start_time, end_time))
     start_time = time.time()
     saveAllToS3(lastUpdateDate + "/habitats/")
     end_time = time.time()
-    ulog.logit(3, "write s3: " + str(total_players) + " player habitat files to s3: " +  utilities.show_elapsed(start_time, end_time))
+    ulog.logit(3, "write " + str(total_players) + " habitat files to s3 " +  utilities.show_elapsed(start_time, end_time))
 
     ulog.logit(3, "Finishing habitat clustering process.")
     
@@ -347,7 +371,7 @@ def generatePlayerGrowthTracker(world, allianceIDs):
     
     # at present activity tracker table is created beforehand directly in SQL
     # TODO function to create/refresh/update the activity tracker table using tbl_player and tbl_alliance
-    
+    ulog.logit(2, "Processing player growth tracker for world " + world)    
     # read data from sql and create an activity table
     world_mod = world
     world_mod = re.sub('[-]', '', world_mod)
@@ -358,8 +382,9 @@ def generatePlayerGrowthTracker(world, allianceIDs):
     df_player_growth = get_player_growth_table(df_player_points)  #rework the pivoted dataframe to get points growth instead of raw points
     df_complete_player_growth = add_player_details_to_index(df_player_growth, df_player_data)  # reset indexes to get a spreadsheet style table with full details in rows
     # write the spreadsheet type tables to csv files for easy validation/use where json from next step cannot be used
-    ulog.logit(3, "Writing player growth tracker to csv file")
-    df_complete_player_growth.to_csv('activity_change_comma.csv', encoding='utf-8')
+    ulog.logit(2, "saving file to csv ")
+    player_growth_csv_filename = 'player_growth' + world + '.csv'
+    df_complete_player_growth.to_csv(player_growth_csv_filename, encoding='utf-8')
     
     #TODO for some reason reset_index doesnt default the column names from index names. so getting index_names, column_names and renaming the columns after reset_index. else could have used reset_index directly in pandas.melt
     index_names = df_complete_player_growth.index.name
@@ -390,7 +415,7 @@ def generatePlayerGrowthTracker(world, allianceIDs):
     max_alliance_id = max(allianceIDs)  #unaligned list
 
     for alliance_id in allianceIDs:
-        utilities.show_progress(loop_counter, rowcount)  #show progress on screen
+        ulog.logit(1, "processing alliance " + str(alliance_id))
         output_file_prefix = world_mod + "_alliance_"
         #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + np.array_str(playerID) + ".json"
         if (alliance_id > 0):
@@ -404,21 +429,18 @@ def generatePlayerGrowthTracker(world, allianceIDs):
             filename = folderpath + json_alliance_data_output
             saveToLocal(jdata, filename, lastUpdateDate) 
         loop_counter += 1
+    ulog.logit(2, "completed creating local alliance files ")
     end_time = time.time()
-    ulog.logit(3, "saving all files locally: " + utilities.show_elapsed(start_time, end_time))
+    ulog.logit(2, "processing 'other' alliances")
     df_alliance_growth = df_complete_player_growth[~df_complete_player_growth[COLUMN_ALLIANCEID].isin(allianceIDs)]  #filter to current alliance 
     df_alliance_growth = df_alliance_growth[~df_alliance_growth[COLUMN_ALLIANCEID].isnull()]  #filter to current alliance 
     output_file_prefix = world_mod + "_alliance_"
     #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + np.array_str(playerID) + ".json"
     json_alliance_data_output = lastUpdateDate + "/alliances/" + output_file_prefix + "0" + ".json"
     jdata = df_alliance_growth.to_json(orient='index') # write dataframe to json
-    saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
-
-    start_time = time.time()
-    saveAllToS3(lastUpdateDate + "/alliances/")
-    end_time = time.time()
-    ulog.logit(3, "saving all files to s3: " + utilities.show_elapsed(start_time, end_time))
-
+    saveToLocal(jdata, json_alliance_data_output, lastUpdateDate) 
+    ulog.logit(1, "completed processing growth trackers for world " +  world)
+    #saveFileToS3(jdata, json_alliance_data_output)  # write the habitat pairs into json file for future use
 
     
 ''' # generateFortClusters
@@ -435,8 +457,8 @@ def generateFortClusters(world, df_player_habitat_data):
     global MAX_FORT_RADIUS
     global folderpath
     global lastUpdateDate
-    global lastUpdated
 
+    ulog.logit(2, "processing fort clusters")
     habitat_column_names = [COLUMN_WORLD, COLUMN_ID, COLUMN_NAME, COLUMN_MAPX, COLUMN_MAPY, COLUMN_PLAYERID]
     playerIDList = df_player_habitat_data.playerID.unique()
     loop_counter = 0
@@ -451,7 +473,8 @@ def generateFortClusters(world, df_player_habitat_data):
     unicodedata.normalize('NFKD', world_mod).encode('ascii','ignore')
 
     for playerID in playerIDList:
-        utilities.show_progress(loop_counter, rowcount)  #show progress on screen
+        ulog.logit(1, "processing player " + str(playerID))
+        ulog.logit(1, "processing habitat")
         df_player_castles = df_player_habitat_data[df_player_habitat_data[COLUMN_PLAYERID] == playerID]  #filter to current player
         #df_player_castles.to_csv('habitat_dump.csv', encoding='utf-8')    
         output_file_prefix = world_mod + "_habitat_"
@@ -461,19 +484,22 @@ def generateFortClusters(world, df_player_habitat_data):
             jdata = df_player_castles.to_json(orient='index') # write dataframe to json
             filename = folderpath + json_habitat_data_output
             saveToLocal(jdata, filename, lastUpdateDate) 
-   #     saveFileToS3(jdata, json_habitat_data_output)  # write the habitat pairs into json file for future use
+        #saveFileToS3(jdata, json_habitat_data_output)  # write the habitat pairs into json file for future use
+        ulog.logit(1, "processing cluster")
         output_file_prefix = world_mod + "_cluster_"
         #json_fort_clusters_output_file = folderpath + lastUpdateDate + "/" + output_file_prefix + np.array_str(playerID) + ".json"
         json_fort_clusters_output_file = lastUpdateDate + "/clusters/" + output_file_prefix + np.array_str(playerID) + ".json"
         df_player_castles = df_player_castles[df_player_castles[COLUMN_PUBLICTYPE] == 0]  #filter to castles only
         df_player_castles = df_player_castles[habitat_column_names]  #pick only relevant columns
+        ulog.logit(1, "creating habitat pairs")
         distance_list = clusterizer.create_habitat_pairs(df_player_castles, MAX_FORT_RADIUS, world)
         if distance_list:
             jdata = pandas.DataFrame(distance_list).to_json(orient='index') # write dataframe to json 
             filename = folderpath + json_fort_clusters_output_file
             saveToLocal(jdata, filename, lastUpdateDate) 
-   #     saveFileToS3(jdata, json_fort_clusters_output_file)  # write the habitat pairs into json file for future use
-        loop_counter += 1
+            #saveFileToS3(jdata, json_fort_clusters_output_file)  # write the habitat pairs into json file for future use
+        ulog.logit(1, "completed player " + str(playerID))
+
 
 
 def saveToLocal(jdata, filename, lastUpdateDate):
@@ -482,7 +508,6 @@ def saveToLocal(jdata, filename, lastUpdateDate):
 
 
 def saveFileToS3(jdata, filename):
-    global bucket_name
     ulog.logit(2, "saveFileToS3... ")
     awsS3 = aws_s3.AwsS3(bucket_name)
     awsS3.writeDataToS3(filename, 'w+', jdata)
@@ -490,16 +515,21 @@ def saveFileToS3(jdata, filename):
      #   f.write(jdata)
 
 def saveAllToS3(key_path):
-    global bucket_name
     folderpath = os.getcwd() + "/"
-    local_folder_path = folderpath + key_path
-    ulog.logit(3, "saveFileToS3... ")
+    overwrite = True
+    ulog.logit(2, "saveFileToS3... ")
     awsS3 = aws_s3.AwsS3(bucket_name)
-    awsS3.writeFolderToS3(key_path, 'w+', local_folder_path)
+    awsS3.writeFolderToS3(key_path, folderpath, overwrite)
     #with open(filename, 'w+') as f:
      #   f.write(jdata)
 
 
+def saveAllToS3SkipExisting(key_path, overwrite):
+    folderpath = os.getcwd() + "/"
+    ulog.logit(2, "saveFileToS3... ")
+    awsS3 = aws_s3.AwsS3(bucket_name)
+    awsS3.writeFolderToS3(key_path, folderpath, overwrite)
+    
     
     #replaced with habitat dump per player. can delete later in july 2016 if still not used by then
 def create_habitat_dump(allianceIDs):
@@ -507,7 +537,25 @@ def create_habitat_dump(allianceIDs):
     df_all_habitats.to_csv('habitat_dump.csv', encoding='utf-8')
     jdata = df_all_habitats.to_json(orient='index') # write dataframe to json
     saveFileToS3(jdata, json_habitat_data_output)  # write the habitat pairs into json file for future use
+
     
+def update_s3(overwrite):
+    # start_time = time.time()
+    # saveAllToS3("2016-07-29" + "/alliances/")
+    # end_time = time.time()
+    # ulog.logit(3, "write clusters to s3: " +  utilities.show_elapsed(start_time, end_time))
+    ulog.logit(3, "writing cluster files to s3:")
+    start_time = time.time()
+    saveAllToS3SkipExisting(lastUpdateDate + "/clusters/", overwrite)
+    end_time = time.time()
+    ulog.logit(3, "write cluster files to s3" +  utilities.show_elapsed(start_time, end_time))
+    ulog.logit(3, "writing habitat files to s3:")
+    start_time = time.time()
+    saveAllToS3SkipExisting(lastUpdateDate + "/habitats/", overwrite)
+    end_time = time.time()
+    ulog.logit(3, "write habitat files to s3" +  utilities.show_elapsed(start_time, end_time))
+
+
 #main flow
 def main():
 
@@ -517,11 +565,6 @@ def main():
     ulog.logit(3, "Data processing module...")
     ulog.logit(2, "Entering Main function.")
     
-    alliance_legends = {"legends":26562}
-    alliance_others = {'LoMB':10988,'KotLD':27080,'AoD':13308,'Venum':24144,'NewWorld':27071,'RoN':23301,'Forsaken':20143,
-                        'RoE':395,'RoS':2920,'SS':198}  #'Legends':26562,
-    alliance_all = {'none':0}
-    playerIDs = {'Blade': 1373}
     utctime = datetime.utcnow()
     lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
 
@@ -529,28 +572,16 @@ def main():
     lastUpdateDate = utctime.strftime("%Y-%m-%d")
     folderpath = os.getcwd() + "/" 
     make_sure_path_exists(folderpath + lastUpdateDate)
-    #tbl_habitat._tblname = dbhelper.TBL_HABITAT_RAW
-    
-    #defining variables for alliances name/Ids to selectively filter data from database
-    json_fort_clusters_output_file = 'fort_clusters.json'
-    json_habitat_data_output = 'alliance_habitats_dump.json'
-    allianceIDs = alliance_all  #new variable that can point to either alliance_legends or others as needed. 
-                                    #Helps avoid changing all usages downstream
     
     #Start processing of Player Growht Tracker
     ulog.logit(3, "Running activity tracker: ")
-    generateAllianceList(allianceIDs)
+    alliance_all = {'none':0}
+    generateAllianceList(alliance_all)
     ulog.logit(3, "Finishing player growth tracker.")
     
+    lastUpdateDate = "2016-08-01"
+    update_s3(False)
 
-    # start_time = time.time()
-    # saveAllToS3("2016-07-26" + "/clusters/")
-    # end_time = time.time()
-    # ulog.logit(3, "write clusters to s3: " +  utilities.show_elapsed(start_time, end_time))
-    # start_time = time.time()
-    # saveAllToS3("2016-07-26" + "/habitats/")
-    # end_time = time.time()
-    # ulog.logit(3, "write s3: player habitat files to s3: " +  utilities.show_elapsed(start_time, end_time))
 
 
 
