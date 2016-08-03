@@ -96,3 +96,8 @@ databasehelper_mysql.py
 log/
 _oldfiles/
 *.json
+virtualenv/
+*.csv
+*.xlsx
+*.json
+aws/
