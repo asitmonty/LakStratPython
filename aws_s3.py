@@ -208,9 +208,10 @@ class AwsS3:
         else:
             missing_key_list = list_dir
             missing_key_list.sort()
+        rowcount += len(missing_key_list)
         loop_counter = 0
         if (overwrite and existing_keys_list):
-            rowcount = len(list_dir)
+            rowcount += len(existing_keys_list)
             #iterate first for exisitng keys
             for fn in existing_keys_list:
                 time_elapsed = time.time() - start_time
@@ -220,8 +221,7 @@ class AwsS3:
                     file = local_folder_path + fn
                     self._bucket.upload_file(file, key)
                 loop_counter += 1
-        else:
-            rowcount = len(missing_key_list)
+
         #iterate next for new keys
         for fn in missing_key_list:
             time_elapsed = time.time() - start_time

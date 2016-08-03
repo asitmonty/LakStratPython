@@ -539,7 +539,7 @@ def create_habitat_dump(allianceIDs):
     saveFileToS3(jdata, json_habitat_data_output)  # write the habitat pairs into json file for future use
 
     
-def update_s3(overwrite):
+def update_s3(lastUpdateDate, overwrite):
     # start_time = time.time()
     # saveAllToS3("2016-07-29" + "/alliances/")
     # end_time = time.time()
@@ -580,7 +580,7 @@ def main():
     ulog.logit(3, "Finishing player growth tracker.")
     
     lastUpdateDate = "2016-08-01"
-    update_s3(False)
+    update_s3(lastUpdateDate, False)
 
 
 
