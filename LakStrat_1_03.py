@@ -479,7 +479,9 @@ def generateFortClusters(world, df_player_habitat_data):
         #df_player_castles.to_csv('habitat_dump.csv', encoding='utf-8')    
         output_file_prefix = world_mod + "_habitat_"
         #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + np.array_str(playerID) + ".json"
-        json_habitat_data_output = lastUpdateDate + "/habitats/" + output_file_prefix + np.array_str(playerID) + ".json"
+        playerID_str = np.array_str(playerID, precision=0)
+        json_habitat_data_output = 
+            lastUpdateDate + "/habitats/" + output_file_prefix + playerID_str + ".json"
         if not df_player_castles.empty:
             jdata = df_player_castles.to_json(orient='index') # write dataframe to json
             filename = folderpath + json_habitat_data_output
@@ -488,7 +490,7 @@ def generateFortClusters(world, df_player_habitat_data):
         ulog.logit(1, "processing cluster")
         output_file_prefix = world_mod + "_cluster_"
         #json_fort_clusters_output_file = folderpath + lastUpdateDate + "/" + output_file_prefix + np.array_str(playerID) + ".json"
-        json_fort_clusters_output_file = lastUpdateDate + "/clusters/" + output_file_prefix + np.array_str(playerID) + ".json"
+        json_fort_clusters_output_file = lastUpdateDate + "/clusters/" + output_file_prefix + playerID_str + ".json"
         df_player_castles = df_player_castles[df_player_castles[COLUMN_PUBLICTYPE] == 0]  #filter to castles only
         df_player_castles = df_player_castles[habitat_column_names]  #pick only relevant columns
         ulog.logit(1, "creating habitat pairs")
