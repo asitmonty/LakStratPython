@@ -303,7 +303,7 @@ def generateAllianceList(allianceIDs):
         ulog.logit(3, "World " + world)
         total_alliance_players = 0
         above100_player_count = 0
-        start_time = time.time()
+        start_time_w = time.time()
         df_alliance_data_below100 = tbl_habitat.read_from_sql_to_dataframe_alliance(1, world, alliance_list)  # load selected rows fromt the habitat table to a dataframe
         df_alliance_data_over100 = tbl_habitat.read_from_sql_to_dataframe_alliance(0, world, alliance_list)  # load selected rows fromt the habitat table to a dataframe
         total_alliance_players += df_alliance_data_below100.playerID.unique().size  # add player count in alliances with rank < 100
@@ -313,17 +313,18 @@ def generateAllianceList(allianceIDs):
         player_count = 0
         alliance_count = len(alliance_list)
         for alliance_id in alliance_list:
-            time_elapsed = time.time() - start_time
+            time_elapsed = time.time() - start_time_w
             utilities.show_progress_time(player_count, total_alliance_players, time_elapsed)  #show progress on screen
             df_alliance_habitat_data = df_alliance_data_below100[df_alliance_data_below100[COLUMN_ALLIANCEID] == alliance_id]
             player_count += df_alliance_habitat_data.playerID.unique().size
             if (not df_alliance_habitat_data.empty):
                 generateFortClusters(world, df_alliance_habitat_data)  #one of playerIDs and allianceIDs have the value, other is null
+        time_elapsed = time.time() - start_time_w
         utilities.show_progress_time(player_count, total_alliance_players, time_elapsed)  #show progress on screen
         generateFortClusters(world, df_alliance_data_over100)  #one of playerIDs and allianceIDs have the value, other is null
         utilities.clear_progress_bar()  #show progress on screen
         end_time = time.time()
-        ulog.logit(3, str(total_alliance_players) + " players" + utilities.show_elapsed(start_time, end_time))
+        ulog.logit(3, str(total_alliance_players) + " players" + utilities.show_elapsed(start_time_w, end_time))
     end_time = time.time()
     ulog.logit(3, "\nall habitat and cluster local " +  utilities.show_elapsed(start_time, end_time))
 
@@ -480,8 +481,7 @@ def generateFortClusters(world, df_player_habitat_data):
         output_file_prefix = world_mod + "_habitat_"
         #json_habitat_data_output = folderpath + lastUpdateDate + "/" + output_file_prefix + np.array_str(playerID) + ".json"
         playerID_str = np.array_str(playerID, precision=0)
-        json_habitat_data_output = 
-            lastUpdateDate + "/habitats/" + output_file_prefix + playerID_str + ".json"
+        json_habitat_data_output = lastUpdateDate + "/habitats/" + output_file_prefix + playerID_str + ".json"
         if not df_player_castles.empty:
             jdata = df_player_castles.to_json(orient='index') # write dataframe to json
             filename = folderpath + json_habitat_data_output
@@ -578,7 +578,7 @@ def main():
     #Start processing of Player Growht Tracker
     ulog.logit(3, "Running activity tracker: ")
     alliance_all = {'none':0}
-#    generateAllianceList(alliance_all)
+    generateAllianceList(alliance_all)
     ulog.logit(3, "Finishing player growth tracker.")
     
     lastUpdateDate = "2016-08-01"
