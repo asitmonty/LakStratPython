@@ -229,6 +229,26 @@ def process(fileType, world, updateType):
     ulog.logit(1, "Exiting function - process().")
 
 
+def process_all_worlds():
+    with open(folderpath + 'worlds.txt', "rb") as worlds:
+    for world in worlds:
+        ulog.logit(3, "Processing world " + world)
+        world = world.rstrip('\r\n')
+        
+        url_lastupdated = "http://public-data.lordsandknights.com/LKWorldServer-" + world + "/lastUpdate"
+        #lastUpdated = read_URL(url_lastupdated)
+        utctime = datetime.utcnow()
+        lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
+        lastUpdateDate = utctime.strftime("%Y-%m-%d")
+        ulog.logit(3, "update timestamp for this run " + lastUpdated)
+
+        updateType = "full"
+
+        ulog.logit(3, "update type '" + updateType + "'")
+        ulog.logit(3, "Beginning Data Pull...")
+
+        process("players", world, updateType)
+
 #main flow
 def main():
 
@@ -241,6 +261,7 @@ def main():
 
         ulog.logit(3, "Starting update from LnK data dump: ")
         ulog.logit(2, "Entering Main function.")
+
 
         #Process the three files for US-3 and US-11
         for world in ['US-3', 'US-11', 'US-1', 'US-2', 'US-4', 'US-5', 'US-6', 'US-7', 'US-8', 'US-9', 'US-10']:
@@ -271,26 +292,8 @@ def main():
             process("habitats", world, updateType)
             ulog.logit(3, "Completed world: " + world)
 
+        process_all_worlds()
 
-            
-        # with open(folderpath + 'worlds.txt', "rb") as worlds:
-        #     for world in worlds:
-        #         ulog.logit(3, "Processing world " + world)
-        #         world = world.rstrip('\r\n')
-                
-        #         url_lastupdated = "http://public-data.lordsandknights.com/LKWorldServer-" + world + "/lastUpdate"
-        #         #lastUpdated = read_URL(url_lastupdated)
-        #         utctime = datetime.utcnow()
-        #         lastUpdated = utctime.strftime("%Y-%m-%d %H-%M-%S")
-        #         lastUpdateDate = utctime.strftime("%Y-%m-%d")
-        #         ulog.logit(3, "update timestamp for this run " + lastUpdated)
-
-        #         updateType = "full"
-
-        #         ulog.logit(3, "update type '" + updateType + "'")
-        #         ulog.logit(3, "Beginning Data Pull...")
-
-        #         process("players", world, updateType)
 
 if __name__ == "__main__":
   main()
