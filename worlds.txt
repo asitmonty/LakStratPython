@@ -1,3 +1,4 @@
+UK-8
 UK-7
 UK-6
 UK-5
@@ -5,6 +6,7 @@ UK-4
 UK-3
 UK-2
 UK-1
+AU-8
 AU-7
 AU-6
 AU-5
@@ -25,6 +27,7 @@ SE-4
 SE-3
 SE-2
 SE-1
+SA-10
 SA-9
 SA-8
 SA-7
@@ -34,6 +37,7 @@ SA-4
 SA-3
 SA-2
 SA-1
+RU-14
 RU-13
 RU-12
 RU-11
@@ -49,6 +53,7 @@ RU-2
 RU-1
 PT-2
 PT-1
+PL-4
 PL-3
 PL-2
 PL-1
@@ -64,6 +69,7 @@ KR-4
 KR-3
 KR-2
 KR-1
+JP-8
 JP-7
 JP-6
 JP-5
@@ -71,6 +77,7 @@ JP-4
 JP-3
 JP-2
 JP-1
+IT-10
 IT-9
 IT-8
 IT-7
@@ -80,6 +87,7 @@ IT-4
 IT-3
 IT-2
 IT-1
+FR-12
 FR-11
 FR-10
 FR-9
@@ -92,6 +100,7 @@ FR-3
 FR-2
 FR-1
 IR-1
+ES-10
 ES-9
 ES-8
 ES-7
@@ -101,6 +110,7 @@ ES-4
 ES-3
 ES-2
 ES-1
+DE-18
 DE-17
 DE-16
 DE-15
@@ -127,6 +137,7 @@ BR-4
 BR-3
 BR-2
 BR-1
+AR-6
 AR-5
 AR-4
 AR-3
